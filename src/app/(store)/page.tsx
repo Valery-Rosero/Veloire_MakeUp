@@ -4,7 +4,7 @@ import { Bike, Smartphone, Palette, MessageCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { ProductCard } from '@/components/store/ProductCard'
 import { HeroSection } from '@/components/store/HeroSection'
-import { CategoryCards } from '@/components/store/CategoryCards'
+import { FaceMap } from '@/components/store/FaceMap'
 import { ShadeWall, type ShadeWallItem } from '@/components/store/ShadeWall'
 import { type CarouselProduct } from '@/components/store/NewArrivalsCarousel'
 
@@ -15,6 +15,7 @@ interface Category {
   name: string
   slug: string
   sort_order: number
+  face_region: string | null
 }
 
 interface FeaturedProduct {
@@ -35,7 +36,7 @@ async function getCategories(): Promise<Category[]> {
     const supabase = await createClient()
     const { data } = await supabase
       .from('categories')
-      .select('id, name, slug, sort_order')
+      .select('id, name, slug, sort_order, face_region')
       .eq('is_active', true)
       .order('sort_order')
     return data ?? []
@@ -113,13 +114,13 @@ async function getShadeWallItems(): Promise<ShadeWallItem[]> {
 
 function CategoriesSection({ categories }: { categories: Category[] }) {
   return (
-    <section className="py-12 border-b border-rim bg-page">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center gap-3 mb-6">
+    <section className="py-12 md:py-16 border-b border-rim bg-page">
+      <div className="max-w-5xl mx-auto px-4">
+        <div className="flex items-center gap-3 mb-8">
           <div className="w-0.5 h-6 bg-accent shrink-0" />
-          <h2 className="font-display text-xl text-fg">Explorar categorías</h2>
+          <h2 className="font-display text-xl text-fg">Explora por zona</h2>
         </div>
-        <CategoryCards categories={categories} />
+        <FaceMap categories={categories} />
       </div>
     </section>
   )

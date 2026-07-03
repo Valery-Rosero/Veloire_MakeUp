@@ -8,6 +8,7 @@ const SECTION_TITLES: Array<{ prefix: string; label: string; exact?: boolean }> 
   { prefix: '/admin', label: 'Dashboard', exact: true },
   { prefix: '/admin/pedidos', label: 'Pedidos' },
   { prefix: '/admin/productos', label: 'Productos' },
+  { prefix: '/admin/categorias', label: 'Categorías' },
   { prefix: '/admin/inventario', label: 'Inventario' },
   { prefix: '/admin/configuracion', label: 'Configuración' },
 ]

@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { usePathname } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { AdminSidebar } from './AdminSidebar'
 import { AdminMobileHeader } from './AdminMobileHeader'
@@ -16,22 +15,33 @@ interface Props {
 export function AdminLayoutShell({ children, userEmail, userName }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [showLeaveModal, setShowLeaveModal] = useState(false)
-  const pathname = usePathname()
-  const adminPathRef = useRef('')
 
-  // Mantener la ruta admin actual en una ref para restaurarla si el usuario retrocede
+  // Interceptar el botón atrás cuando el usuario sale del admin.
+  // Si el usuario presionó atrás varias veces y quedó a múltiples pasos de /admin,
+  // el flag isReturningToAdmin mantiene el loop "go(1) hasta estar en admin".
   useEffect(() => {
-    adminPathRef.current = window.location.pathname + window.location.search
-  }, [pathname])
+    let isReturningToAdmin = false
 
-  // Interceptar el botón atrás del navegador cuando sale del admin
-  useEffect(() => {
     function handlePopState() {
-      if (!window.location.pathname.startsWith('/admin')) {
-        window.history.pushState(null, '', adminPathRef.current)
+      const inAdmin = window.location.pathname.startsWith('/admin')
+
+      if (isReturningToAdmin) {
+        if (inAdmin) {
+          isReturningToAdmin = false   // llegamos — parar el loop
+        } else {
+          window.history.go(1)         // aún fuera de admin — seguir avanzando
+        }
+        return
+      }
+
+      if (!inAdmin) {
+        isReturningToAdmin = true
+        setDrawerOpen(false)           // cerrar el drawer si estaba abierto
+        window.history.go(1)
         setShowLeaveModal(true)
       }
     }
+
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
@@ -61,7 +71,7 @@ export function AdminLayoutShell({ children, userEmail, userName }: Props) {
           <>
             <motion.div
               key="overlay"
-              className="lg:hidden fixed inset-0 z-40 bg-black/50"
+              className="lg:hidden fixed inset-0 z-50 bg-black/50"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -69,7 +79,7 @@ export function AdminLayoutShell({ children, userEmail, userName }: Props) {
             />
             <motion.div
               key="drawer"
-              className="lg:hidden fixed left-0 top-0 bottom-0 z-50"
+              className="lg:hidden fixed left-0 top-0 bottom-0 z-[60]"
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}

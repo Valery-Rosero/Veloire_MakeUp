@@ -24,9 +24,9 @@ export async function GET(request: NextRequest) {
       .limit(10)
 
     const results = (data ?? []).map((p) => {
-      const images = p.product_images as Array<{ url: string; alt_text: string | null; is_main: boolean }> | null
+      const images = p.product_images as unknown as Array<{ url: string; alt_text: string | null; is_main: boolean }> | null
       const mainImg = images?.find((img) => img.is_main) ?? images?.[0] ?? null
-      const category = p.categories as { name: string } | null
+      const category = p.categories as unknown as { name: string } | null
 
       return {
         id: p.id,

@@ -186,17 +186,17 @@ export function HeroSection({ products = [] }: HeroSectionProps) {
               Hecho para todas.
             </p>
 
-            <div className="flex items-center gap-4 w-full">
+            <div className="flex items-center gap-5">
               <Link
                 href="/catalogo"
-                className="group inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-noir text-beige text-sm font-body font-medium hover:opacity-90 transition-opacity flex-1"
+                className="group inline-flex items-center gap-1.5 text-sm font-body font-medium text-accent hover:text-fg transition-colors duration-150"
               >
                 Ver colección
                 <ArrowRight size={13} className="transition-transform duration-150 group-hover:translate-x-0.5" />
               </Link>
               <Link
                 href="/catalogo?orden=nuevo"
-                className="inline-flex items-center justify-center py-3 text-sm font-body font-medium text-accent hover:text-fg transition-colors duration-150 shrink-0"
+                className="inline-flex items-center text-sm font-body font-medium text-fg-2 hover:text-fg transition-colors duration-150"
               >
                 Novedades
               </Link>

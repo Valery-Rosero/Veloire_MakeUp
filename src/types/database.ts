@@ -16,9 +16,9 @@ export interface Database {
         Relationships: []
       }
       categories: {
-        Row: { id: string; name: string; slug: string; description: string | null; image_url: string | null; is_active: boolean; sort_order: number; created_at: string }
-        Insert: { name: string; slug: string; description?: string | null; image_url?: string | null; is_active?: boolean; sort_order?: number }
-        Update: { name?: string; slug?: string; description?: string | null; image_url?: string | null; is_active?: boolean; sort_order?: number }
+        Row: { id: string; name: string; slug: string; description: string | null; image_url: string | null; face_region: string | null; is_active: boolean; sort_order: number; created_at: string }
+        Insert: { name: string; slug: string; description?: string | null; image_url?: string | null; face_region?: string | null; is_active?: boolean; sort_order?: number }
+        Update: { name?: string; slug?: string; description?: string | null; image_url?: string | null; face_region?: string | null; is_active?: boolean; sort_order?: number }
         Relationships: []
       }
       products: {

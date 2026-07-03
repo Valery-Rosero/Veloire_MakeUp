@@ -3,6 +3,7 @@ export interface Category {
   name: string
   slug: string
   description: string | null
+  face_region?: string | null
 }
 
 export interface CatalogoProduct {

@@ -1,16 +1,16 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTheme } from '@/components/ui/ThemeProvider'
-import { LayoutDashboard, ShoppingBag, Package, BarChart2, Settings, X, LogOut, Sun, Moon } from 'lucide-react'
+import { LayoutDashboard, ShoppingBag, Package, BarChart2, Settings, Layers, X, LogOut, Sun, Moon } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { href: '/admin/pedidos', label: 'Pedidos', icon: ShoppingBag, exact: false },
   { href: '/admin/productos', label: 'Productos', icon: Package, exact: false },
+  { href: '/admin/categorias', label: 'Categorías', icon: Layers, exact: false },
   { href: '/admin/inventario', label: 'Inventario', icon: BarChart2, exact: false },
   { href: '/admin/configuracion', label: 'Configuración', icon: Settings, exact: false },
 ]
@@ -23,7 +23,6 @@ interface Props {
 
 export function AdminSidebar({ userEmail, userName, onClose }: Props) {
   const pathname = usePathname()
-  const router = useRouter()
   const { resolvedTheme, setTheme } = useTheme()
 
   const displayName = userName ?? 'Administradora'
@@ -32,8 +31,7 @@ export function AdminSidebar({ userEmail, userName, onClose }: Props) {
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
-    router.push('/')
-    router.refresh()
+    window.location.replace('/')
   }
 
   return (

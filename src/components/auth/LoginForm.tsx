@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/Input'
@@ -15,7 +14,6 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ redirectTo }: LoginFormProps) {
-  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [attempts, setAttempts] = useState(0)
@@ -57,8 +55,8 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
 
     const role = (profileRows as Array<{ role: string }> | null)?.[0]?.role
 
-    router.push(role === 'admin' ? '/admin' : redirectTo)
-    router.refresh()
+    // replace() elimina /login del historial y fuerza carga limpia con cookies de sesión activas.
+    window.location.replace(role === 'admin' ? '/admin' : redirectTo)
   }
 
   return (

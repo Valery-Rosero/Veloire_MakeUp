@@ -39,20 +39,18 @@ export async function proxy(request: NextRequest) {
   const isAuthPage = AUTH_PAGES.some((p) => pathname.startsWith(p))
   const isProtectedPage = pathname.startsWith('/admin') || pathname.startsWith('/cuenta')
 
-  // If the session is invalid (deleted user, expired token) on a protected route, clear cookies and redirect to login.
-  // Public pages stay accessible even with a stale session.
+  // If the session is completely invalid (deleted user, revoked token) on a protected route,
+  // clear stale cookies and redirect to login.
   if (authError && isProtectedPage) {
     const response = NextResponse.redirect(new URL('/login', request.url))
     clearAuthCookies(response, request)
     return response
   }
 
-  // On public pages with a stale session, clear the cookies silently so the user appears as guest.
-  if (authError && !isAuthPage) {
-    const response = NextResponse.next({ request })
-    clearAuthCookies(response, request)
-    return response
-  }
+  // On public pages, let the request through even with an auth error.
+  // Do NOT clear cookies — an authError can be a transient network failure or a
+  // brief race during token refresh. Clearing would wipe the refresh token and
+  // force the user to log in again unnecessarily.
 
   if (pathname.startsWith('/admin')) {
     if (!user) {
