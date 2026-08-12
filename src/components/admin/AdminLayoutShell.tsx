@@ -10,9 +10,10 @@ interface Props {
   children: React.ReactNode
   userEmail: string
   userName: string | null
+  userRole: 'admin' | 'superadmin'
 }
 
-export function AdminLayoutShell({ children, userEmail, userName }: Props) {
+export function AdminLayoutShell({ children, userEmail, userName, userRole }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [showLeaveModal, setShowLeaveModal] = useState(false)
 
@@ -62,7 +63,7 @@ export function AdminLayoutShell({ children, userEmail, userName }: Props) {
     <div className="min-h-screen flex bg-alt">
       {/* Desktop sidebar — always visible */}
       <div className="hidden lg:block shrink-0">
-        <AdminSidebar userEmail={userEmail} userName={userName} />
+        <AdminSidebar userEmail={userEmail} userName={userName} userRole={userRole} />
       </div>
 
       {/* Mobile drawer */}
@@ -88,6 +89,7 @@ export function AdminLayoutShell({ children, userEmail, userName }: Props) {
               <AdminSidebar
                 userEmail={userEmail}
                 userName={userName}
+                userRole={userRole}
                 onClose={() => setDrawerOpen(false)}
               />
             </motion.div>

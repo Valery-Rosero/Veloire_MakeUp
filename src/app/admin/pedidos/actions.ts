@@ -3,7 +3,12 @@
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth-guard'
+import { logAdminAction } from '@/lib/audit-log'
 import type { OrderStatus } from '@/types/database'
+import { Resend } from 'resend'
+import { OrderCancelled } from '@/lib/email/templates/OrderCancelled'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -42,22 +47,46 @@ async function restoreOrderStock(orderId: string) {
 // ── Actions ───────────────────────────────────────────────────────────────────
 
 export async function updateOrderStatus(orderId: string, status: OrderStatus) {
-  await requireAdmin()
+  const admin = await requireAdmin()
   if (status === 'cancelled') {
     await restoreOrderStock(orderId)
   }
 
   const supabase = await createAdminClient()
+  const { data: orderRow } = await supabase
+    .from('orders')
+    .select('status, order_number')
+    .eq('id', orderId)
+    .single()
+
   await supabase.from('orders').update({ status }).eq('id', orderId)
+
+  await logAdminAction({
+    actorId: admin.id,
+    actorEmail: admin.email,
+    action: 'order.status_update',
+    entityType: 'order',
+    entityId: orderId,
+    entityLabel: orderRow?.order_number ?? null,
+    details: { from: orderRow?.status ?? null, to: status },
+  })
+
   revalidatePath('/admin/pedidos')
   revalidatePath(`/admin/pedidos/${orderId}`)
 }
 
 export async function cancelOrder(orderId: string): Promise<{ success: true } | { error: string }> {
-  await requireAdmin()
+  const admin = await requireAdmin()
   await restoreOrderStock(orderId)
 
   const supabase = await createAdminClient()
+
+  const { data: order } = await supabase
+    .from('orders')
+    .select('customer_email, customer_name, order_number')
+    .eq('id', orderId)
+    .single()
+
   const { error } = await supabase
     .from('orders')
     .update({ status: 'cancelled' })
@@ -66,18 +95,37 @@ export async function cancelOrder(orderId: string): Promise<{ success: true } | 
     .neq('status', 'cancelled')
 
   if (error) return { error: error.message }
+
+  if (order) {
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL ?? 'Vèloire <noreply@veloire.co>',
+      to: order.customer_email,
+      subject: `Pedido #${order.order_number} cancelado — Vèloire`,
+      react: OrderCancelled({ orderNumber: order.order_number, customerName: order.customer_name }),
+    }).catch(() => undefined)
+  }
+
+  await logAdminAction({
+    actorId: admin.id,
+    actorEmail: admin.email,
+    action: 'order.cancel',
+    entityType: 'order',
+    entityId: orderId,
+    entityLabel: order?.order_number ?? null,
+  })
+
   revalidatePath('/admin/pedidos')
   revalidatePath(`/admin/pedidos/${orderId}`)
   return { success: true }
 }
 
 export async function deleteOrder(orderId: string): Promise<{ success: true } | { error: string }> {
-  await requireAdmin()
+  const admin = await requireAdmin()
   const supabase = await createAdminClient()
 
   const { data: order } = await supabase
     .from('orders')
-    .select('status')
+    .select('status, order_number')
     .eq('id', orderId)
     .single()
 
@@ -93,6 +141,15 @@ export async function deleteOrder(orderId: string): Promise<{ success: true } | 
 
   const { error } = await supabase.from('orders').delete().eq('id', orderId)
   if (error) return { error: error.message }
+
+  await logAdminAction({
+    actorId: admin.id,
+    actorEmail: admin.email,
+    action: 'order.delete',
+    entityType: 'order',
+    entityId: orderId,
+    entityLabel: order.order_number,
+  })
 
   revalidatePath('/admin/pedidos')
   return { success: true }

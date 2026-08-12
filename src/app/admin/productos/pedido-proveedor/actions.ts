@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth-guard'
+import { logAdminAction } from '@/lib/audit-log'
 import type { WizardProduct } from '@/lib/store/supplier-order'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -33,7 +34,7 @@ export interface BulkProductResult {
 export async function createProductsInBulk(
   products: WizardProduct[]
 ): Promise<{ results: BulkProductResult[] }> {
-  await requireAdmin()
+  const admin = await requireAdmin()
   const supabase = await createAdminClient()
 
   // Fetch all existing slugs once for collision detection
@@ -112,6 +113,16 @@ export async function createProductsInBulk(
           sort_order: 0,
         })
       }
+
+      await logAdminAction({
+        actorId: admin.id,
+        actorEmail: admin.email,
+        action: 'product.create',
+        entityType: 'product',
+        entityId: productId,
+        entityLabel: product.nombre,
+        details: { source: 'bulk' },
+      })
 
       results.push({ nombre: product.nombre, success: true, slug })
     } catch (err) {

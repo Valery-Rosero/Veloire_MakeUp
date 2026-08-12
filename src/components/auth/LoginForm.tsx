@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/Input'
 import { PasswordInput } from './PasswordInput'
+import { isAdminRole } from '@/lib/roles'
 
 const MAX_ATTEMPTS = 5
 
@@ -46,17 +47,11 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
       return
     }
 
-    // Check role in profiles to redirect admins to the panel
-    const { data: profileRows } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', data.user.id)
-      .limit(1)
-
-    const role = (profileRows as Array<{ role: string }> | null)?.[0]?.role
+    // El rol viene en el JWT (app_metadata) — no hace falta consultar profiles.
+    const role = data.user.app_metadata?.role as string | undefined
 
     // replace() elimina /login del historial y fuerza carga limpia con cookies de sesión activas.
-    window.location.replace(role === 'admin' ? '/admin' : redirectTo)
+    window.location.replace(isAdminRole(role) ? '/admin' : redirectTo)
   }
 
   return (

@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth-guard'
+import { logAdminAction } from '@/lib/audit-log'
 
 interface ShadeInput {
   id?: string
@@ -40,8 +41,9 @@ export interface SaveProductInput {
 }
 
 export async function saveProduct(data: SaveProductInput): Promise<{ error?: string }> {
-  await requireAdmin()
+  const admin = await requireAdmin()
   const supabase = await createAdminClient()
+  const isNew = !data.id
 
   const productFields = {
     category_id: data.category_id,
@@ -126,6 +128,15 @@ export async function saveProduct(data: SaveProductInput): Promise<{ error?: str
     )
   }
 
+  await logAdminAction({
+    actorId: admin.id,
+    actorEmail: admin.email,
+    action: isNew ? 'product.create' : 'product.update',
+    entityType: 'product',
+    entityId: productId,
+    entityLabel: data.name,
+  })
+
   revalidatePath('/admin/productos')
   if (productId) revalidatePath(`/admin/productos/${productId}/editar`)
   redirect('/admin/productos')
@@ -133,8 +144,14 @@ export async function saveProduct(data: SaveProductInput): Promise<{ error?: str
 }
 
 export async function deleteProduct(productId: string): Promise<{ error?: string }> {
-  await requireAdmin()
+  const admin = await requireAdmin()
   const supabase = await createAdminClient()
+
+  const { data: productRow } = await supabase
+    .from('products')
+    .select('name')
+    .eq('id', productId)
+    .single()
 
   // Check for active (non-terminal) orders that include this product
   const { data: orderItemRows } = await supabase
@@ -160,6 +177,15 @@ export async function deleteProduct(productId: string): Promise<{ error?: string
 
   if (error) return { error: error.message }
 
+  await logAdminAction({
+    actorId: admin.id,
+    actorEmail: admin.email,
+    action: 'product.delete',
+    entityType: 'product',
+    entityId: productId,
+    entityLabel: (productRow as { name: string } | null)?.name ?? null,
+  })
+
   revalidatePath('/admin/productos')
   return {}
 }
@@ -168,9 +194,17 @@ export async function toggleProductStatus(
   productId: string,
   currentStatus: 'draft' | 'active' | 'inactive'
 ) {
-  await requireAdmin()
+  const admin = await requireAdmin()
   const supabase = await createAdminClient()
   const newStatus = currentStatus === 'active' ? 'inactive' : 'active'
   await supabase.from('products').update({ status: newStatus }).eq('id', productId)
+  await logAdminAction({
+    actorId: admin.id,
+    actorEmail: admin.email,
+    action: 'product.status_toggle',
+    entityType: 'product',
+    entityId: productId,
+    details: { from: currentStatus, to: newStatus },
+  })
   revalidatePath('/admin/productos')
 }

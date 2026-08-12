@@ -3,8 +3,9 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTheme } from '@/components/ui/ThemeProvider'
-import { LayoutDashboard, ShoppingBag, Package, BarChart2, Settings, Layers, X, LogOut, Sun, Moon } from 'lucide-react'
+import { LayoutDashboard, ShoppingBag, Package, BarChart2, Settings, Layers, Users, History, X, LogOut, Sun, Moon } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import type { UserRole } from '@/types/database'
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
@@ -13,17 +14,21 @@ const NAV_ITEMS = [
   { href: '/admin/categorias', label: 'Categorías', icon: Layers, exact: false },
   { href: '/admin/inventario', label: 'Inventario', icon: BarChart2, exact: false },
   { href: '/admin/configuracion', label: 'Configuración', icon: Settings, exact: false },
+  { href: '/admin/administradores', label: 'Administradores', icon: Users, exact: false, roles: ['superadmin'] as UserRole[] },
+  { href: '/admin/historial', label: 'Historial', icon: History, exact: false, roles: ['superadmin'] as UserRole[] },
 ]
 
 interface Props {
   userEmail: string
   userName: string | null
+  userRole: UserRole
   onClose?: () => void
 }
 
-export function AdminSidebar({ userEmail, userName, onClose }: Props) {
+export function AdminSidebar({ userEmail, userName, userRole, onClose }: Props) {
   const pathname = usePathname()
   const { resolvedTheme, setTheme } = useTheme()
+  const navItems = NAV_ITEMS.filter((item) => !item.roles || item.roles.includes(userRole))
 
   const displayName = userName ?? 'Administradora'
   const initials = displayName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
@@ -63,7 +68,7 @@ export function AdminSidebar({ userEmail, userName, onClose }: Props) {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-5 space-y-0.5">
-        {NAV_ITEMS.map(({ href, label, icon: Icon, exact }) => {
+        {navItems.map(({ href, label, icon: Icon, exact }) => {
           const isActive = exact ? pathname === href : pathname.startsWith(href)
           return (
             <Link

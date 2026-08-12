@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isAdminRole } from '@/lib/roles'
 
 const AUTH_PAGES = ['/login', '/registro', '/recuperar-contrasena', '/nueva-contrasena']
 
@@ -34,10 +35,14 @@ export async function proxy(request: NextRequest) {
   )
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
+  // El rol vive en el JWT (app_metadata) — lo setea la migración/alta de admin
+  // en Supabase. Así el middleware nunca tiene que consultar `profiles`.
+  const role = user?.app_metadata?.role as string | undefined
 
   const { pathname } = request.nextUrl
   const isAuthPage = AUTH_PAGES.some((p) => pathname.startsWith(p))
   const isProtectedPage = pathname.startsWith('/admin') || pathname.startsWith('/cuenta')
+  const isApiRoute = pathname.startsWith('/api')
 
   // If the session is completely invalid (deleted user, revoked token) on a protected route,
   // clear stale cookies and redirect to login.
@@ -52,26 +57,33 @@ export async function proxy(request: NextRequest) {
   // brief race during token refresh. Clearing would wipe the refresh token and
   // force the user to log in again unnecessarily.
 
+  // Un admin autenticado vive en /admin — cualquier otra página del sitio
+  // (home, /cuenta, catálogo, etc.) lo rebota al panel. No aplica a /api
+  // (rompería los fetch del propio panel) ni a las páginas de auth: login y
+  // registro se resuelven más abajo, y recuperar/nueva-contraseña deben
+  // quedar accesibles siempre, incluso con una sesión de admin activa.
+  if (isAdminRole(role) && !pathname.startsWith('/admin') && !isApiRoute && !isAuthPage) {
+    return NextResponse.redirect(new URL('/admin', request.url))
+  }
+
   if (pathname.startsWith('/admin')) {
     if (!user) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
-    // Usa service role para leer el perfil — la anon key queda bloqueada por RLS
-    // si no hay política SELECT explícita en la tabla profiles.
-    const adminSupabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { cookies: { getAll: () => [], setAll: () => {} } }
-    )
-    const { data: profileRows } = await adminSupabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .limit(1)
-    const role = (profileRows as Array<{ role: string }> | null)?.[0]?.role
-    if (role !== 'admin') {
+    if (!isAdminRole(role)) {
       return NextResponse.redirect(new URL('/', request.url))
     }
+
+    // Ya validamos sesión + rol acá — se reenvía por header para que
+    // admin/layout.tsx no tenga que volver a golpear Supabase.
+    const requestHeaders = new Headers(request.headers)
+    requestHeaders.set('x-user-id', user.id)
+    requestHeaders.set('x-user-email', user.email ?? '')
+    requestHeaders.set('x-user-name', (user.user_metadata?.full_name as string | undefined) ?? '')
+    requestHeaders.set('x-user-role', role)
+    const response = NextResponse.next({ request: { headers: requestHeaders } })
+    supabaseResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie))
+    return response
   }
 
   if (pathname.startsWith('/cuenta')) {
@@ -82,7 +94,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (user && (pathname === '/login' || pathname === '/registro')) {
-    return NextResponse.redirect(new URL('/', request.url))
+    return NextResponse.redirect(new URL(role === 'admin' ? '/admin' : '/', request.url))
   }
 
   return supabaseResponse

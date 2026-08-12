@@ -1,24 +1,22 @@
 import { redirect } from 'next/navigation'
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
 import { AdminLayoutShell } from '@/components/admin/AdminLayoutShell'
+import { isAdminRole } from '@/lib/roles'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // src/proxy.ts ya validó sesión + rol admin para todo lo que matchea /admin
+  // y reenvía la identidad por header — evita repetir el round-trip a Supabase acá.
+  const headerList = await headers()
+  const userRole = headerList.get('x-user-role')
 
-  if (!user) redirect('/login?redirectTo=/admin')
-
-  const adminSupabase = await createAdminClient()
-  const { data: profile } = await adminSupabase
-    .from('profiles')
-    .select('full_name, role')
-    .eq('id', user.id)
-    .single()
-
-  if (profile?.role !== 'admin') redirect('/')
+  if (!isAdminRole(userRole)) redirect('/login?redirectTo=/admin')
 
   return (
-    <AdminLayoutShell userEmail={user.email ?? ''} userName={profile?.full_name ?? null}>
+    <AdminLayoutShell
+      userEmail={headerList.get('x-user-email') ?? ''}
+      userName={headerList.get('x-user-name') || null}
+      userRole={userRole}
+    >
       {children}
     </AdminLayoutShell>
   )

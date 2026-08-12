@@ -2,7 +2,7 @@ export type Json = string | number | boolean | null | { [key: string]: Json } | 
 
 export type ProductStatus = 'draft' | 'active' | 'inactive'
 export type OrderStatus = 'pending_payment' | 'paid' | 'preparing' | 'shipped' | 'delivered' | 'cancelled'
-export type UserRole = 'customer' | 'admin'
+export type UserRole = 'customer' | 'admin' | 'superadmin'
 export type NotificationType = 'order_confirmation' | 'payment_confirmed' | 'order_shipped' | 'order_delivered'
 export type NotificationStatus = 'pending' | 'sent' | 'failed'
 
@@ -12,7 +12,7 @@ export interface Database {
       profiles: {
         Row: { id: string; full_name: string | null; email: string; phone: string | null; role: UserRole; avatar_url: string | null; created_at: string; updated_at: string }
         Insert: { id: string; email: string; full_name?: string | null; phone?: string | null; role?: UserRole; avatar_url?: string | null }
-        Update: { full_name?: string | null; phone?: string | null; avatar_url?: string | null }
+        Update: { full_name?: string | null; phone?: string | null; role?: UserRole; avatar_url?: string | null }
         Relationships: []
       }
       categories: {
@@ -66,6 +66,12 @@ export interface Database {
       order_status_history: {
         Row: { id: string; order_id: string; status: OrderStatus; note: string | null; changed_at: string }
         Insert: { order_id: string; status: OrderStatus; note?: string | null }
+        Update: Record<string, never>
+        Relationships: []
+      }
+      admin_activity_log: {
+        Row: { id: string; actor_id: string | null; actor_email: string; action: string; entity_type: string; entity_id: string | null; entity_label: string | null; details: Json | null; created_at: string }
+        Insert: { actor_id?: string | null; actor_email: string; action: string; entity_type: string; entity_id?: string | null; entity_label?: string | null; details?: Json | null }
         Update: Record<string, never>
         Relationships: []
       }

@@ -3,6 +3,7 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { requireAdmin } from '@/lib/auth-guard'
+import { logAdminAction } from '@/lib/audit-log'
 
 export interface AdminOrderItem {
   productId: string
@@ -31,7 +32,7 @@ export interface CreateAdminOrderInput {
 export async function createAdminOrder(
   input: CreateAdminOrderInput
 ): Promise<{ orderId: string } | { error: string }> {
-  await requireAdmin()
+  const admin = await requireAdmin()
   try {
     if (input.items.length === 0) return { error: 'Agrega al menos un producto al pedido' }
 
@@ -94,6 +95,15 @@ export async function createAdminOrder(
     )
 
     if (itemsError) return { error: itemsError.message }
+
+    await logAdminAction({
+      actorId: admin.id,
+      actorEmail: admin.email,
+      action: 'order.create',
+      entityType: 'order',
+      entityId: orderId,
+      entityLabel: orderNumber,
+    })
 
     revalidatePath('/admin/pedidos')
     return { orderId }
