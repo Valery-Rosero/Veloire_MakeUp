@@ -5,10 +5,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth-guard'
 import { logAdminAction } from '@/lib/audit-log'
 import type { OrderStatus } from '@/types/database'
-import { Resend } from 'resend'
-import { OrderCancelled } from '@/lib/email/templates/OrderCancelled'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { sendOrderCancelledEmail } from '@/lib/email/send-order-cancelled'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -97,12 +94,11 @@ export async function cancelOrder(orderId: string): Promise<{ success: true } | 
   if (error) return { error: error.message }
 
   if (order) {
-    await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL ?? 'Vèloire <noreply@veloire.co>',
-      to: order.customer_email,
-      subject: `Pedido #${order.order_number} cancelado — Vèloire`,
-      react: OrderCancelled({ orderNumber: order.order_number, customerName: order.customer_name }),
-    }).catch(() => undefined)
+    await sendOrderCancelledEmail({
+      orderNumber: order.order_number,
+      customerName: order.customer_name,
+      customerEmail: order.customer_email,
+    })
   }
 
   await logAdminAction({

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { sendOrderCancelledEmail } from '@/lib/email/send-order-cancelled'
 
 export async function cancelOrder(orderId: string): Promise<{ success: true } | { error: string }> {
   const supabase = await createClient()
@@ -10,7 +11,7 @@ export async function cancelOrder(orderId: string): Promise<{ success: true } | 
 
   const { data: order } = await supabase
     .from('orders')
-    .select('id, status, customer_email, order_number')
+    .select('id, status, customer_email, customer_name, order_number')
     .eq('id', orderId)
     .single()
 
@@ -24,6 +25,12 @@ export async function cancelOrder(orderId: string): Promise<{ success: true } | 
     .eq('id', orderId)
 
   if (error) return { error: error.message }
+
+  await sendOrderCancelledEmail({
+    orderNumber: order.order_number,
+    customerName: order.customer_name,
+    customerEmail: order.customer_email,
+  })
 
   revalidatePath(`/pedido/${order.order_number}`)
   return { success: true }

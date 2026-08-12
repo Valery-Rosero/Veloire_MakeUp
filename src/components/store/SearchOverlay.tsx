@@ -140,11 +140,8 @@ export function SearchOverlay({ open, onClose }: Props) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="fixed top-0 left-0 right-0 z-[60] flex flex-col shadow-2xl"
-            style={{
-              backgroundColor: 'var(--color-alt, #fdf6f0)',
-              maxHeight: '85vh',
-            }}
+            className="fixed top-0 left-0 right-0 z-[60] flex flex-col shadow-2xl bg-alt"
+            style={{ maxHeight: '85vh' }}
           >
             {/* Barra de búsqueda */}
             <div className="flex items-center gap-3 px-5 md:px-10 border-b border-[#e8d0c0]" style={{ minHeight: '64px' }}>

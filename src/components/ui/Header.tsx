@@ -146,6 +146,13 @@ export function Header() {
             </div>
 
             <div className="flex items-center gap-0.5 -mr-1">
+              <button
+                onClick={() => setSearchOpen(true)}
+                aria-label="Buscar"
+                className="w-10 h-10 flex items-center justify-center text-fg-2 hover:text-fg transition-colors"
+              >
+                <Search size={18} strokeWidth={1.5} />
+              </button>
               <button onClick={openDrawer} aria-label="Abrir carrito" className="relative w-10 h-10 flex items-center justify-center text-fg-2 hover:text-fg transition-colors">
                 <ShoppingBag size={18} strokeWidth={1.5} />
                 {badge}

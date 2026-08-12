@@ -114,11 +114,11 @@ async function getShadeWallItems(): Promise<ShadeWallItem[]> {
 
 function CategoriesSection({ categories }: { categories: Category[] }) {
   return (
-    <section className="py-12 md:py-16 border-b border-rim bg-page">
+    <section className="py-14 md:py-20 border-y border-rim bg-alt">
       <div className="max-w-5xl mx-auto px-4">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-0.5 h-6 bg-accent shrink-0" />
-          <h2 className="font-display text-xl text-fg">Explora por zona</h2>
+        <div className="flex items-start gap-4 mb-8">
+          <div className="w-0.75 h-10 mt-1 shrink-0 bg-accent" />
+          <h2 className="font-display text-2xl md:text-[28px] text-fg leading-tight">Explora por zona</h2>
         </div>
         <FaceMap categories={categories} />
       </div>
@@ -251,11 +251,11 @@ function FeaturedSection({ products }: { products: FeaturedProduct[] }) {
         {/* Encabezado */}
         <div className="flex items-start justify-between mb-10 md:mb-12">
           <div className="flex items-start gap-4">
-            <div className="w-0.75 h-10 mt-1 shrink-0" style={{ backgroundColor: '#a56583' }} />
+            <div className="w-0.75 h-10 mt-1 shrink-0 bg-accent" />
             <div>
               <h2 className="font-display text-2xl md:text-[28px] text-fg leading-tight">Destacados</h2>
               <p className="font-body text-sm text-accent mt-1" style={{ fontStyle: 'italic' }}>
-                Los favoritos de nuestras clientas
+                Los favoritos de nuestra comunidad
               </p>
             </div>
           </div>
@@ -329,7 +329,7 @@ function FeaturedSection({ products }: { products: FeaturedProduct[] }) {
 const VALUE_ITEMS = [
   { icon: Bike,          title: 'Envíos a Pasto',           description: 'Entregamos en toda la ciudad con rapidez y cuidado.' },
   { icon: Smartphone,    title: 'Pago fácil por Nequi',     description: 'Transfiere sin salir de casa. Rápido y seguro.' },
-  { icon: Palette,       title: 'Tonos para todas',         description: 'Una paleta pensada para cada piel y cada tono.' },
+  { icon: Palette,       title: 'Para quienes crean',        description: 'Una paleta para quienes ven el maquillaje como expresión, no como obligación.' },
   { icon: MessageCircle, title: 'Atención personalizada',   description: 'Te ayudamos a encontrar el tono ideal para ti.' },
 ]
 

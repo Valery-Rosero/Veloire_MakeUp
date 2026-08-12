@@ -182,8 +182,8 @@ export function HeroSection({ products = [] }: HeroSectionProps) {
             </h1>
 
             <p className="font-body text-[14px] text-fg-2 leading-[1.7] mb-6 max-w-xs">
-              Encuentra tu tono perfecto entre nuestra colección artesanal.
-              Hecho para todas.
+              Maquillaje para quienes lo usan como lo que es:
+              una forma de crear.
             </p>
 
             <div className="flex items-center gap-5">
@@ -233,8 +233,8 @@ export function HeroSection({ products = [] }: HeroSectionProps) {
             <div className="mt-5 mb-5 bg-rose-medium" style={{ width: '40px', height: '2px' }} />
 
             <p className="font-body text-[15px] text-fg-2 max-w-sm leading-[1.7] mb-8">
-              Encuentra tu tono perfecto entre nuestra colección artesanal.
-              Hecho para todas.
+              Maquillaje para quienes lo usan como lo que es:
+              una forma de crear.
             </p>
 
             <div className="flex flex-row items-center gap-3">

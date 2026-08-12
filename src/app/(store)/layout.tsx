@@ -8,13 +8,14 @@ async function getStoreConfig(): Promise<{
   instagram_url?: string
   whatsapp_number?: string
   delivery_fee?: string
+  store_email?: string
 }> {
   try {
     const supabase = await createClient()
     const { data } = await supabase
       .from('store_config')
       .select('key, value')
-      .in('key', ['instagram_url', 'whatsapp_number', 'delivery_fee'])
+      .in('key', ['instagram_url', 'whatsapp_number', 'delivery_fee', 'store_email'])
     return Object.fromEntries((data ?? []).map(({ key, value }) => [key, value]))
   } catch {
     return {}
@@ -38,7 +39,11 @@ export default async function StoreLayout({ children }: { children: React.ReactN
       <Header />
       <CartPortal deliveryFee={deliveryFee} isLoggedIn={!!user} />
       <main className="flex-1">{children}</main>
-      <Footer instagramUrl={config.instagram_url} whatsappNumber={config.whatsapp_number} />
+      <Footer
+        instagramUrl={config.instagram_url}
+        whatsappNumber={config.whatsapp_number}
+        email={config.store_email}
+      />
       <WhatsAppFAB
         phone={waPhone}
         message="Hola, quiero hacer un pedido de Vèloire 💄"

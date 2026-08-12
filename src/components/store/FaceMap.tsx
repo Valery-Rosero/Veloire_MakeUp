@@ -131,7 +131,7 @@ export function FaceMap({ categories }: Props) {
   const rostroSelected = selectedZone === 'rostro'
 
   return (
-    <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-14">
+    <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
 
       <ul className="sr-only" aria-label="Categorías por zona del rostro">
         {FACE_REGIONS.map((region) => {
@@ -154,14 +154,21 @@ export function FaceMap({ categories }: Props) {
       {/* ── Mapa facial ─────────────────────────────────────────────── */}
       <div
         className="relative shrink-0 select-none"
-        style={{ width: 260, height: 390 }}
+        style={{ width: 300, height: 450 }}
         aria-hidden
       >
+        {/* Gradiente decorativo detrás de la ilustración */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse 80% 70% at 50% 52%, var(--bg-highlight) 0%, transparent 72%)',
+          }}
+        />
         <Image
           src="/image-removebg-preview.png"
-          alt="Ilustración de rostro femenino con zonas de maquillaje"
+          alt="Ilustración de rostro con zonas de maquillaje"
           fill
-          sizes="260px"
+          sizes="300px"
           priority
           className="object-contain dark:invert pointer-events-none"
           draggable={false}
@@ -243,7 +250,7 @@ export function FaceMap({ categories }: Props) {
       </div>
 
       {/* ── Panel de categorías ─────────────────────────────────────── */}
-      <div className="flex-1 w-full min-h-[160px]">
+      <div className="flex-1 w-full">
         <AnimatePresence mode="wait">
           {selectedZone && selectedCategories.length > 0 ? (
             <motion.div
@@ -253,30 +260,30 @@ export function FaceMap({ categories }: Props) {
               exit={{ opacity: 0, y: prefersReduced ? 0 : -6 }}
               transition={transition}
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-0.5 h-5 bg-accent shrink-0" />
-                  <h3 className="font-display text-xl text-fg">{selectedLabel}</h3>
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-0.75 h-8 bg-accent" />
+                  <h3 className="font-display text-2xl text-fg">{selectedLabel}</h3>
                 </div>
                 <button
                   onClick={() => setSelectedZone(null)}
-                  className="p-1.5 rounded-lg text-fg-3 hover:text-fg hover:bg-highlight transition-colors"
+                  className="p-1.5 rounded-lg text-fg-3 hover:text-fg hover:bg-card transition-colors"
                   aria-label="Cerrar panel"
                 >
                   <X size={15} />
                 </button>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {selectedCategories.map((cat) => (
                   <Link
                     key={cat.id}
                     href={`/catalogo?categoria=${cat.slug}`}
-                    className="flex items-center justify-between group px-4 py-3 rounded-xl border border-rim hover:border-accent hover:bg-highlight transition-all duration-150"
+                    className="flex items-center justify-between group px-5 py-4 rounded-2xl border border-rim bg-card hover:border-accent hover:bg-highlight transition-all duration-150"
                   >
-                    <span className="font-body text-sm font-medium text-fg group-hover:text-accent transition-colors">
+                    <span className="font-display text-[17px] text-fg group-hover:text-accent transition-colors">
                       {cat.name}
                     </span>
-                    <span className="text-fg-3 group-hover:text-accent transition-colors text-sm" aria-hidden>
+                    <span className="text-fg-3 group-hover:text-accent transition-colors" aria-hidden>
                       →
                     </span>
                   </Link>
@@ -291,17 +298,27 @@ export function FaceMap({ categories }: Props) {
               exit={{ opacity: 0 }}
               transition={transition}
             >
-              <p className="font-body text-sm text-fg-3 mb-4 text-center lg:text-left">
-                Toca una zona del rostro para explorar productos.
+              <p className="font-display text-2xl md:text-3xl text-fg mb-2 leading-tight">
+                Elige una zona
               </p>
-              <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
+              <p className="font-body text-sm text-fg-3 mb-7 leading-relaxed">
+                Toca el rostro o selecciona una zona para descubrir los productos.
+              </p>
+              <div className="grid grid-cols-2 gap-2.5">
                 {FACE_REGIONS.filter((r) => hasCategories(r.id)).map((region) => (
                   <button
                     key={region.id}
                     onClick={() => handleZoneClick(region.id)}
-                    className="px-3 py-1.5 rounded-full border border-rim text-xs font-body text-fg-2 hover:border-accent hover:text-accent transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-accent"
+                    onMouseEnter={() => setHoveredZone(region.id)}
+                    onMouseLeave={() => setHoveredZone(null)}
+                    className="group flex items-center justify-between px-5 py-4 rounded-2xl border border-rim bg-card hover:border-accent hover:bg-highlight transition-all duration-150 text-left focus-visible:outline-2 focus-visible:outline-accent"
                   >
-                    {region.label}
+                    <span className="font-display text-[17px] text-fg group-hover:text-accent transition-colors">
+                      {region.label}
+                    </span>
+                    <span className="text-fg-3 group-hover:text-accent transition-colors text-sm" aria-hidden>
+                      →
+                    </span>
                   </button>
                 ))}
               </div>
