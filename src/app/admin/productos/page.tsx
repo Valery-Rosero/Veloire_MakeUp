@@ -59,11 +59,11 @@ export default async function ProductosAdminPage({ searchParams }: PageProps) {
         <h1 className="font-display text-2xl text-fg">Productos</h1>
         <div className="flex items-center gap-2">
           <Link
-            href="/admin/productos/pedido-proveedor"
+            href="/admin/productos/importar"
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-rim text-fg-2 text-sm font-body font-medium hover:bg-alt transition-colors"
           >
             <FileSpreadsheet size={15} />
-            <span className="hidden sm:inline">Pedido de proveedor</span>
+            <span className="hidden sm:inline">Importar productos</span>
             <span className="sm:hidden">Excel</span>
           </Link>
           <Link

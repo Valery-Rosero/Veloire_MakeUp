@@ -19,7 +19,9 @@ export interface ProductDetail {
   category_id: string
   name: string
   slug: string
+  sku: string
   description: string | null
+  comparison: Record<string, string> | null
   price: number
   compare_price: number | null
   meta_title: string | null

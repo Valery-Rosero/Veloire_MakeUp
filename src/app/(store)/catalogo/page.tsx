@@ -57,7 +57,7 @@ async function getProducts(
         `id, slug, name, price, compare_price,
         product_images(url, alt_text, is_main),
         product_shades(id, is_active, stock),
-        categories(name)`,
+        categories(name, slug)`,
         { count: 'exact' },
       )
       .eq('status', 'active')

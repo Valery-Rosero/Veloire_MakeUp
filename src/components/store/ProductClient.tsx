@@ -10,6 +10,7 @@ import { calculateDiscountPct } from '@/lib/format'
 import { ShadeSelector } from './ShadeSelector'
 import { ProductActions } from './ProductActions'
 import { ProductDescription } from './ProductDescription'
+import { ProductComparisonFacts } from './ProductComparisonFacts'
 
 interface ProductClientProps {
   product: ProductDetail
@@ -268,6 +269,14 @@ export function ProductClient({ product }: ProductClientProps) {
         {/* Descripción */}
         {product.description && (
           <ProductDescription description={product.description} />
+        )}
+
+        {/* Ficha técnica */}
+        {product.categories && (
+          <ProductComparisonFacts
+            categorySlug={product.categories.slug}
+            comparison={product.comparison}
+          />
         )}
 
         {/* Info bullets */}

@@ -1,6 +1,7 @@
 import { Header } from '@/components/ui/Header'
 import { Footer } from '@/components/ui/Footer'
 import { CartPortal } from '@/components/store/CartPortal'
+import { CompareTray } from '@/components/store/CompareTray'
 import { WhatsAppFAB } from '@/components/ui/WhatsAppFAB'
 import { createClient } from '@/lib/supabase/server'
 
@@ -48,6 +49,7 @@ export default async function StoreLayout({ children }: { children: React.ReactN
         phone={waPhone}
         message="Hola, quiero hacer un pedido de Vèloire 💄"
       />
+      <CompareTray />
     </>
   )
 }

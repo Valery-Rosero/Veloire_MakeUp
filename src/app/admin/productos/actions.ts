@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth-guard'
 import { logAdminAction } from '@/lib/audit-log'
+import { getFieldsForCategory, validateComparisonValue } from '@/lib/comparison-fields'
+import { nextSkuForBrandCategory } from '@/lib/sku'
 
 interface ShadeInput {
   id?: string
@@ -28,6 +30,8 @@ export interface SaveProductInput {
   category_id: string
   name: string
   slug: string
+  sku: string
+  brand: string | null
   description: string
   price: number
   compare_price: number | null
@@ -35,6 +39,7 @@ export interface SaveProductInput {
   is_featured: boolean
   meta_title: string
   meta_description: string
+  comparison: Record<string, string>
   shades: ShadeInput[]
   removedShadeIds: string[]
   images: ImageInput[]
@@ -45,10 +50,27 @@ export async function saveProduct(data: SaveProductInput): Promise<{ error?: str
   const supabase = await createAdminClient()
   const isNew = !data.id
 
+  const { data: category } = await supabase
+    .from('categories')
+    .select('slug')
+    .eq('id', data.category_id)
+    .single()
+
+  // Defensa en profundidad: aunque el formulario ya solo deja elegir valores
+  // válidos, un cliente comprometido no debería poder escribir cualquier cosa.
+  if (category) {
+    for (const fieldDef of getFieldsForCategory(category.slug)) {
+      const err = validateComparisonValue(fieldDef, data.comparison[fieldDef.key] ?? '')
+      if (err) return { error: `${fieldDef.label}: ${err}` }
+    }
+  }
+
   const productFields = {
     category_id: data.category_id,
     name: data.name,
     slug: data.slug,
+    sku: data.sku,
+    brand: data.brand,
     description: data.description || null,
     price: data.price,
     compare_price: data.compare_price,
@@ -56,20 +78,21 @@ export async function saveProduct(data: SaveProductInput): Promise<{ error?: str
     is_featured: data.is_featured,
     meta_title: data.meta_title || null,
     meta_description: data.meta_description || null,
+    comparison: data.comparison,
   }
 
   let productId = data.id
 
   if (data.id) {
     const { error } = await supabase.from('products').update(productFields).eq('id', data.id)
-    if (error) return { error: error.message }
+    if (error) return { error: error.code === '23505' ? 'Ya existe un producto con ese SKU.' : error.message }
   } else {
     const { data: rows, error } = await supabase
       .from('products')
       .insert(productFields)
       .select('id')
       .limit(1)
-    if (error) return { error: error.message }
+    if (error) return { error: error.code === '23505' ? 'Ya existe un producto con ese SKU.' : error.message }
     productId = (rows as Array<{ id: string }> | null)?.[0]?.id
     if (!productId) return { error: 'Error al crear el producto.' }
   }
@@ -188,6 +211,29 @@ export async function deleteProduct(productId: string): Promise<{ error?: string
 
   revalidatePath('/admin/productos')
   return {}
+}
+
+export async function previewNextSku(
+  categoryId: string,
+  brand: string | null
+): Promise<{ sku: string } | { error: string }> {
+  await requireAdmin()
+  const supabase = await createAdminClient()
+
+  const { data: category } = await supabase
+    .from('categories')
+    .select('sku_prefix')
+    .eq('id', categoryId)
+    .single()
+  if (!category) return { error: 'Categoría no encontrada.' }
+
+  const { data: rows } = await supabase
+    .from('products')
+    .select('sku')
+    .ilike('sku', `%-${category.sku_prefix}-%`)
+
+  const existing = new Set((rows as Array<{ sku: string }> | null)?.map((r) => r.sku) ?? [])
+  return { sku: nextSkuForBrandCategory(brand, category.sku_prefix, existing) }
 }
 
 export async function toggleProductStatus(

@@ -8,6 +8,7 @@ interface CategoryData {
   id: string
   name: string
   slug: string
+  sku_prefix: string
   description: string | null
   image_url: string | null
   face_region: string | null
@@ -25,7 +26,7 @@ export default async function EditarCategoriaPage({ params }: PageProps) {
 
   const { data } = await supabase
     .from('categories')
-    .select('id, name, slug, description, image_url, face_region, is_active, sort_order')
+    .select('id, name, slug, sku_prefix, description, image_url, face_region, is_active, sort_order')
     .eq('id', id)
     .limit(1)
 
@@ -53,6 +54,7 @@ export default async function EditarCategoriaPage({ params }: PageProps) {
           id: category.id,
           name: category.name,
           slug: category.slug,
+          sku_prefix: category.sku_prefix,
           description: category.description ?? '',
           image_url: category.image_url ?? '',
           face_region: category.face_region,

@@ -2,15 +2,17 @@
 
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react'
 import {
-  useSupplierOrderStore,
+  useProductImportStore,
   isStep2Complete,
-  type WizardProduct,
+  type ImportProduct,
   type Category,
-} from '@/lib/store/supplier-order'
+} from '@/lib/store/product-import'
+import { getFieldsForCategory } from '@/lib/comparison-fields'
+import { ComparisonFieldInput } from '@/components/admin/ComparisonFieldInput'
 
 // ─── Profit calculator ────────────────────────────────────────────────────────
 
-function ProfitCalc({ product }: { product: WizardProduct }) {
+function ProfitCalc({ product }: { product: ImportProduct }) {
   const price = parseFloat(product.precioVenta) || 0
   const cost = product.costoUnitario
   const qty = product.shades.length || 1
@@ -53,7 +55,7 @@ function ProfitCalc({ product }: { product: WizardProduct }) {
           <p className="font-medium text-fg mt-0.5">${totalRevenue.toLocaleString('es-CO')}</p>
         </div>
       </div>
-      <div className={`mt-3 pt-3 border-t border-current/10 flex justify-between text-xs font-body`}>
+      <div className="mt-3 pt-3 border-t border-current/10 flex justify-between text-xs font-body">
         <span className="text-fg-3">Ganancia total del lote ({qty} unidades)</span>
         <span className={`font-semibold ${color}`}>${totalProfit.toLocaleString('es-CO')}</span>
       </div>
@@ -68,23 +70,41 @@ function ProfitCalc({ product }: { product: WizardProduct }) {
 
 // ─── Product form ─────────────────────────────────────────────────────────────
 
+const field = 'w-full px-3.5 py-2.5 rounded-xl border border-rim bg-card font-body text-sm text-fg focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent'
+const lbl = 'font-body text-sm font-medium text-fg block mb-1.5'
+
 function ProductForm({
   product,
   categories,
 }: {
-  product: WizardProduct
+  product: ImportProduct
   categories: Category[]
 }) {
-  const { updateProduct } = useSupplierOrderStore()
+  const { updateProduct } = useProductImportStore()
   const id = product.id
+  const categoryName = categories.find((c) => c.id === product.categoryId)?.name ?? '—'
+  const comparisonFields = getFieldsForCategory(product.categorySlug)
+
+  function updateComparison(key: string, value: string) {
+    updateProduct(id, { comparison: { ...product.comparison, [key]: value } })
+  }
 
   return (
     <div className="space-y-5">
       {/* Header (read-only) */}
       <div className="bg-alt rounded-xl p-4">
-        <p className="font-body text-xs text-fg-3 uppercase tracking-wide mb-1">Del Excel</p>
-        <p className="font-body text-sm font-medium text-fg">{product.nombre}</p>
-        <p className="font-body text-xs text-fg-2 mt-0.5">{product.marca}</p>
+        <div className="flex items-center justify-between">
+          <p className="font-body text-xs text-fg-3 uppercase tracking-wide">Del Excel</p>
+          <span
+            className={`text-[10px] font-body font-medium px-1.5 py-0.5 rounded-full ${
+              product.isExisting ? 'bg-warning/15 text-warning' : 'bg-success/15 text-success'
+            }`}
+          >
+            {product.isExisting ? 'Actualiza existente' : 'Nuevo'}
+          </span>
+        </div>
+        <p className="font-body text-sm font-medium text-fg mt-1">{product.nombre}</p>
+        <p className="font-body text-xs text-fg-2 mt-0.5">{product.marca} · {categoryName}</p>
         {product.descripcion && (
           <p className="font-body text-xs text-fg-3 mt-1 line-clamp-2">{product.descripcion}</p>
         )}
@@ -96,9 +116,26 @@ function ProductForm({
         </div>
       </div>
 
+      {/* SKU */}
+      <div>
+        <label className={lbl}>SKU</label>
+        <input
+          type="text"
+          value={product.sku}
+          onChange={(e) => updateProduct(id, { sku: e.target.value.toUpperCase() })}
+          disabled={product.isExisting}
+          className={`${field} font-mono uppercase disabled:opacity-60`}
+        />
+        {product.isExisting && (
+          <p className="font-body text-xs text-fg-3 mt-1">
+            Este SKU ya existe — se actualizará ese producto en vez de crear uno nuevo.
+          </p>
+        )}
+      </div>
+
       {/* Precio de venta */}
       <div>
-        <label className="font-body text-sm font-medium text-fg block mb-1.5">
+        <label className={lbl}>
           Precio de venta al público (COP) <span className="text-error">*</span>
         </label>
         <div className="relative">
@@ -109,30 +146,30 @@ function ProductForm({
             value={product.precioVenta}
             onChange={(e) => updateProduct(id, { precioVenta: e.target.value })}
             placeholder="25000"
-            className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-rim bg-card font-body text-sm text-fg focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
+            className={`${field} pl-8`}
           />
         </div>
         <ProfitCalc product={product} />
       </div>
 
-      {/* Categoría */}
-      <div>
-        <label className="font-body text-sm font-medium text-fg block mb-1.5">
-          Categoría <span className="text-error">*</span>
-        </label>
-        <select
-          value={product.categoryId}
-          onChange={(e) => updateProduct(id, { categoryId: e.target.value })}
-          className="w-full px-3.5 py-2.5 rounded-xl border border-rim bg-card font-body text-sm text-fg focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
-        >
-          <option value="">— Seleccionar categoría —</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Ficha de comparación */}
+      {comparisonFields.length > 0 && (
+        <div>
+          <label className={lbl}>Ficha de comparación</label>
+          <div className="grid grid-cols-2 gap-3">
+            {comparisonFields.map((f) => (
+              <ComparisonFieldInput
+                key={f.key}
+                field={f}
+                value={product.comparison[f.key] ?? ''}
+                onChange={(v) => updateComparison(f.key, v)}
+                fieldClass={field}
+                lblClass="font-body text-xs text-fg-2 block mb-1"
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Destacado */}
       <label className="flex items-center gap-3 cursor-pointer">
@@ -144,7 +181,7 @@ function ProductForm({
         />
         <div>
           <p className="font-body text-sm font-medium text-fg">Producto destacado</p>
-          <p className="font-body text-xs text-fg-3">Aparece en la sección "Destacados" del inicio</p>
+          <p className="font-body text-xs text-fg-3">Aparece en la sección &quot;Destacados&quot; del inicio</p>
         </div>
       </label>
     </div>
@@ -154,7 +191,7 @@ function ProductForm({
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function Step2Products({ categories }: { categories: Category[] }) {
-  const { products, productIdx, setProductIdx, setStep } = useSupplierOrderStore()
+  const { products, productIdx, setProductIdx, setStep } = useProductImportStore()
 
   const current = products[productIdx]
   const allDone = products.every(isStep2Complete)
@@ -252,7 +289,7 @@ export function Step2Products({ categories }: { categories: Category[] }) {
 
         {!allDone && productIdx === total - 1 && (
           <p className="font-body text-xs text-fg-3 text-center mt-2">
-            Completa precio y categoría de todos los productos para continuar.
+            Completa el precio de todos los productos para continuar.
           </p>
         )}
       </div>

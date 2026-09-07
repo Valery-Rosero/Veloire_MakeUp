@@ -6,13 +6,14 @@ import { ProductForm } from '@/components/admin/ProductForm'
 interface Category {
   id: string
   name: string
+  slug: string
 }
 
 export default async function NuevoProductoPage() {
   const supabase = await createAdminClient()
   const { data } = await supabase
     .from('categories')
-    .select('id, name')
+    .select('id, name, slug')
     .eq('is_active', true)
     .order('name')
 

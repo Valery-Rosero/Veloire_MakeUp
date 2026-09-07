@@ -16,10 +16,30 @@ Extensión de `auth.users`. Se crea automáticamente con un trigger cuando un us
 | `full_name` | text | Nombre del usuario |
 | `email` | text | Email (duplicado de auth.users) |
 | `phone` | text | Teléfono celular (10 dígitos) |
-| `role` | text | `'admin'` o `'customer'` |
+| `role` | `user_role` (enum) | `'customer'`, `'admin'` o `'superadmin'` — ver [ARQUITECTURA.md](ARQUITECTURA.md) para el modelo de permisos |
 | `created_at` | timestamp | — |
 
 **RLS:** Los usuarios solo pueden leer y editar su propio perfil. El admin puede leer todos (via service role).
+
+---
+
+### `admin_activity_log`
+
+Historial de auditoría de todo lo que se hace en el panel admin (productos, categorías, pedidos, configuración, altas/bajas de admin). Solo visible para `superadmin` en `/admin/historial`. Insertado por `src/lib/audit-log.ts::logAdminAction()` desde cada Server Action mutante del admin.
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `id` | uuid | PK |
+| `actor_id` | uuid | FK → `profiles.id`, `on delete set null` |
+| `actor_email` | text | Snapshot del email de quien hizo la acción |
+| `action` | text | Ej: `'product.create'`, `'admin.promote'` |
+| `entity_type` | text | Ej: `'product'`, `'order'`, `'profile'` |
+| `entity_id` | text | Nullable |
+| `entity_label` | text | Nombre legible para mostrar en el historial |
+| `details` | jsonb | Datos extra según la acción (ej. `{from, to}` en cambios de estado) |
+| `created_at` | timestamp | — |
+
+**RLS:** activo, sin policies permisivas — solo `createAdminClient()` (service role) puede leer/escribir.
 
 ---
 
@@ -30,11 +50,12 @@ Categorías de maquillaje. Cada una puede estar asociada a una zona del rostro.
 | Columna | Tipo | Notas |
 |---|---|---|
 | `id` | uuid | PK |
-| `name` | text | Nombre (ej: "Labios", "Ojos") |
+| `name` | text | Nombre (ej: "Labiales", "Bases") |
 | `slug` | text | URL amigable único |
 | `sort_order` | int | Orden de aparición |
 | `is_active` | bool | Visible en la tienda |
 | `face_region` | text | Zona del rostro para el FaceMap |
+| `sku_prefix` | text | Prefijo de 3 letras para el SKU autogenerado de sus productos (ej. `'LAB'`, `'BAS'`) — ver [PENDIENTE.md](PENDIENTE.md#comparador-de-productos) |
 
 ---
 
@@ -48,9 +69,13 @@ Producto principal (sin variantes de tono).
 | `category_id` | uuid | FK → `categories.id` |
 | `name` | text | Nombre del producto |
 | `slug` | text | URL amigable único |
+| `sku` | text | Único. `{MARCA_ABREV}-{CATEGORIA_ABREV}-{NNN}`, autogenerado y editable. Ver `src/lib/sku.ts` |
 | `description` | text | Descripción larga |
+| `comparison` | jsonb | Valores de los campos de comparación de su categoría (`{tipo_de_piel: 'Grasa', ...}`). Los campos válidos por categoría viven en `src/lib/comparison-fields.ts`, NO en la base de datos — es la única fuente de verdad, para que el Excel, el formulario admin y la tabla de comparación nunca diverjan. |
 | `price` | numeric | Precio en COP |
 | `compare_price` | numeric | Precio tachado (precio anterior) |
+| `brand` | text | Marca — usada para generar el SKU |
+| `cost_price` | numeric | Costo unitario (calculador de rentabilidad en el importador) |
 | `status` | text | `'active'`, `'inactive'`, `'draft'` |
 | `is_featured` | bool | Aparece en destacados del home |
 | `meta_title` | text | Título SEO |

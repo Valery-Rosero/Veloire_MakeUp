@@ -1,13 +1,15 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Plus, Pencil, Trash2, Loader2, Check } from 'lucide-react'
-import { saveProduct, type SaveProductInput } from '@/app/admin/productos/actions'
+import { saveProduct, previewNextSku, type SaveProductInput } from '@/app/admin/productos/actions'
 import { Input } from '@/components/ui/Input'
 import { ImageUploader } from './ImageUploader'
 import { slugify } from '@/lib/format'
+import { getFieldsForCategory } from '@/lib/comparison-fields'
+import { ComparisonFieldInput } from './ComparisonFieldInput'
 
 interface ShadeRow {
   id?: string
@@ -29,6 +31,7 @@ interface ImageRow {
 interface Category {
   id: string
   name: string
+  slug: string
 }
 
 interface InitialData {
@@ -36,6 +39,8 @@ interface InitialData {
   category_id: string
   name: string
   slug: string
+  sku: string
+  brand: string | null
   description: string
   price: number
   compare_price: number | null
@@ -43,6 +48,7 @@ interface InitialData {
   is_featured: boolean
   meta_title: string
   meta_description: string
+  comparison: Record<string, string>
   shades: ShadeRow[]
   images: ImageRow[]
 }
@@ -61,6 +67,7 @@ function freshShade(sortOrder: number): ShadeRow {
   return { name: '', hex_color: '#D4537E', stock: 0, image_url: '', is_active: true, sort_order: sortOrder }
 }
 
+
 export function ProductForm({ categories, initialData }: Props) {
   const [isPending, startTransition] = useTransition()
   const [serverError, setServerError] = useState<string | null>(null)
@@ -69,6 +76,9 @@ export function ProductForm({ categories, initialData }: Props) {
   const [name, setName] = useState(initialData?.name ?? '')
   const [slug, setSlug] = useState(initialData?.slug ?? '')
   const [slugManual, setSlugManual] = useState(!!initialData)
+  const [brand, setBrand] = useState(initialData?.brand ?? '')
+  const [sku, setSku] = useState(initialData?.sku ?? '')
+  const [skuManual, setSkuManual] = useState(!!initialData)
   const [categoryId, setCategoryId] = useState(initialData?.category_id ?? '')
   const [description, setDescription] = useState(initialData?.description ?? '')
   const [price, setPrice] = useState(String(initialData?.price ?? ''))
@@ -76,6 +86,23 @@ export function ProductForm({ categories, initialData }: Props) {
   const [isFeatured, setIsFeatured] = useState(initialData?.is_featured ?? false)
   const [metaTitle, setMetaTitle] = useState(initialData?.meta_title ?? '')
   const [metaDescription, setMetaDescription] = useState(initialData?.meta_description ?? '')
+  const [comparison, setComparison] = useState<Record<string, string>>(initialData?.comparison ?? {})
+
+  const selectedCategory = categories.find((c) => c.id === categoryId)
+  const comparisonFields = selectedCategory ? getFieldsForCategory(selectedCategory.slug) : []
+
+  // Auto-genera el SKU mientras se crea un producto nuevo (nunca al editar uno
+  // existente) y mientras el usuario no lo haya editado a mano.
+  const skuRequestId = useRef(0)
+  useEffect(() => {
+    if (initialData || skuManual || !categoryId) return
+    const requestId = ++skuRequestId.current
+    const timeout = setTimeout(async () => {
+      const result = await previewNextSku(categoryId, brand.trim() || null)
+      if (requestId === skuRequestId.current && 'sku' in result) setSku(result.sku)
+    }, 400)
+    return () => clearTimeout(timeout)
+  }, [categoryId, brand, initialData, skuManual])
 
   // Images
   const [images, setImages] = useState<ImageRow[]>(
@@ -164,10 +191,19 @@ export function ProductForm({ categories, initialData }: Props) {
     setShadeForm({ ...shadeForm, data: { ...shadeForm.data, [field]: value } })
   }
 
+  // ── Ficha de comparación ─────────────────────────────────────────────────
+  function updateComparisonField(key: string, value: string) {
+    setComparison((prev) => ({ ...prev, [key]: value }))
+  }
+
   // ── Submit ────────────────────────────────────────────────────────────────
   function buildInput(targetStatus: 'draft' | 'active' | 'inactive'): SaveProductInput | null {
     if (!name.trim() || !slug.trim() || !categoryId || !price) {
       setServerError('Completa los campos obligatorios: nombre, slug, categoría y precio.')
+      return null
+    }
+    if (!sku.trim()) {
+      setServerError('El SKU es obligatorio.')
       return null
     }
     const parsedPrice = parseFloat(price)
@@ -189,6 +225,8 @@ export function ProductForm({ categories, initialData }: Props) {
       category_id: categoryId,
       name: name.trim(),
       slug: slug.trim(),
+      sku: sku.trim(),
+      brand: brand.trim() || null,
       description: description.trim(),
       price: parsedPrice,
       compare_price: parsedCompare,
@@ -196,6 +234,7 @@ export function ProductForm({ categories, initialData }: Props) {
       is_featured: isFeatured,
       meta_title: metaTitle.trim(),
       meta_description: metaDescription.trim(),
+      comparison,
       shades,
       removedShadeIds,
       images,
@@ -245,6 +284,32 @@ export function ProductForm({ categories, initialData }: Props) {
             disabled={isPending}
           />
           <p className="text-xs text-fg-3 mt-1">Generado del nombre. Solo letras, números y guiones.</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            label="Marca"
+            name="brand"
+            type="text"
+            placeholder="Ej: Lula"
+            value={brand}
+            onChange={(e) => setBrand(e.target.value)}
+            disabled={isPending}
+          />
+          <div>
+            <label className={lbl}>SKU *</label>
+            <input
+              className={`${field} font-mono uppercase`}
+              type="text"
+              value={sku}
+              onChange={(e) => { setSku(e.target.value.toUpperCase()); setSkuManual(true) }}
+              placeholder="MARC-CAT-001"
+              disabled={isPending}
+            />
+            <p className="text-xs text-fg-3 mt-1">
+              {initialData ? 'Editable si necesitas corregirlo.' : 'Se genera solo, pero puedes editarlo.'}
+            </p>
+          </div>
         </div>
 
         <div>
@@ -546,7 +611,33 @@ export function ProductForm({ categories, initialData }: Props) {
         </AnimatePresence>
       </div>
 
-      {/* ── 4. SEO ─────────────────────────────────────────────────────────── */}
+      {/* ── 4. Ficha de comparación ────────────────────────────────────────── */}
+      {selectedCategory && (
+        <div className={section}>
+          <h2 className="font-body text-sm font-medium text-fg">Ficha de comparación</h2>
+          {comparisonFields.length === 0 ? (
+            <p className="text-sm font-body text-fg-3">
+              Esta categoría no tiene ficha de comparación.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              {comparisonFields.map((f) => (
+                <ComparisonFieldInput
+                  key={f.key}
+                  field={f}
+                  value={comparison[f.key] ?? ''}
+                  onChange={(v) => updateComparisonField(f.key, v)}
+                  fieldClass={field}
+                  lblClass={lbl}
+                  disabled={isPending}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── 5. SEO ─────────────────────────────────────────────────────────── */}
       <div className={section}>
         <h2 className="font-body text-sm font-medium text-fg">SEO (opcional)</h2>
         <Input

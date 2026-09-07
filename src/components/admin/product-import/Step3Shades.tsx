@@ -1,7 +1,7 @@
 'use client'
 
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useSupplierOrderStore, type WizardProduct } from '@/lib/store/supplier-order'
+import { useProductImportStore, type ImportProduct } from '@/lib/store/product-import'
 import { ImageUploader } from '@/components/admin/ImageUploader'
 
 // ─── Single shade row ─────────────────────────────────────────────────────────
@@ -15,7 +15,7 @@ function ShadeRow({
   productId: string
   noColor: boolean
 }) {
-  const { updateShade } = useSupplierOrderStore()
+  const { updateShade } = useProductImportStore()
 
   return (
     <div className="bg-alt rounded-xl p-4 space-y-3">
@@ -105,8 +105,8 @@ function ShadeRow({
 
 // ─── Product shades form ──────────────────────────────────────────────────────
 
-function ProductShadesForm({ product }: { product: WizardProduct }) {
-  const { updateProduct, updateShade } = useSupplierOrderStore()
+function ProductShadesForm({ product }: { product: ImportProduct }) {
+  const { updateProduct, updateShade } = useProductImportStore()
 
   const toggleNoColor = (val: boolean) => {
     updateProduct(product.id, { noColorVariation: val })
@@ -176,13 +176,12 @@ function ProductShadesForm({ product }: { product: WizardProduct }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function Step3Shades() {
-  const { products, productIdx, setProductIdx, setStep } = useSupplierOrderStore()
+  const { products, productIdx, setProductIdx, setStep } = useProductImportStore()
 
   const current = products[productIdx]
   const total = products.length
   const canGoNext = productIdx < total - 1
   const canGoPrev = productIdx > 0
-  const isLast = productIdx === total - 1
 
   if (!current) return null
 

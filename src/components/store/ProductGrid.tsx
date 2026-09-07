@@ -57,6 +57,8 @@ export function ProductGrid({ products, filterKey }: ProductGridProps) {
               shadeCount={activeShades.length}
               totalStock={totalStock}
               index={i}
+              productId={p.id}
+              categorySlug={p.categories?.slug}
             />
           )
         })}

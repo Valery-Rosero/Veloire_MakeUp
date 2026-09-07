@@ -14,7 +14,7 @@ export interface CatalogoProduct {
   compare_price: number | null
   product_images: Array<{ url: string; alt_text: string | null; is_main: boolean }>
   product_shades: Array<{ id: string; is_active: boolean; stock: number }>
-  categories: { name: string } | null
+  categories: { name: string; slug: string } | null
 }
 
 export interface ProductRow {

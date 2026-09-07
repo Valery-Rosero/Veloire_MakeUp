@@ -31,7 +31,7 @@ const getProduct = cache(async (slug: string): Promise<ProductDetail | null> => 
     const { data: rows } = await supabase
       .from('products')
       .select(`
-        id, category_id, name, slug, description, price, compare_price,
+        id, category_id, name, slug, sku, description, comparison, price, compare_price,
         meta_title, meta_description,
         product_images(url, alt_text, is_main),
         product_shades(id, name, hex_color, image_url, stock, is_active, sort_order),

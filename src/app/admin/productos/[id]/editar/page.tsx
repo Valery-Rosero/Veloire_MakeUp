@@ -7,6 +7,7 @@ import { ProductForm } from '@/components/admin/ProductForm'
 interface Category {
   id: string
   name: string
+  slug: string
 }
 
 interface ProductRow {
@@ -14,7 +15,10 @@ interface ProductRow {
   category_id: string
   name: string
   slug: string
+  sku: string
+  brand: string | null
   description: string | null
+  comparison: Record<string, string> | null
   price: number
   compare_price: number | null
   status: 'draft' | 'active' | 'inactive'
@@ -50,14 +54,14 @@ export default async function EditarProductoPage({ params }: PageProps) {
     supabase
       .from('products')
       .select(`
-        id, category_id, name, slug, description, price, compare_price,
+        id, category_id, name, slug, sku, brand, description, comparison, price, compare_price,
         status, is_featured, meta_title, meta_description,
         product_shades(id, name, hex_color, stock, image_url, is_active, sort_order),
         product_images(url, alt_text, is_main, sort_order)
       `)
       .eq('id', id)
       .limit(1),
-    supabase.from('categories').select('id, name').eq('is_active', true).order('name'),
+    supabase.from('categories').select('id, name, slug').eq('is_active', true).order('name'),
   ])
 
   const product = (productResult.data as ProductRow[] | null)?.[0]
@@ -70,7 +74,10 @@ export default async function EditarProductoPage({ params }: PageProps) {
     category_id: product.category_id,
     name: product.name,
     slug: product.slug,
+    sku: product.sku,
+    brand: product.brand,
     description: product.description ?? '',
+    comparison: product.comparison ?? {},
     price: product.price,
     compare_price: product.compare_price,
     status: product.status,

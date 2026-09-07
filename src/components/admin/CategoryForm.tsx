@@ -11,11 +11,21 @@ interface InitialData {
   id: string
   name: string
   slug: string
+  sku_prefix: string
   description: string
   image_url: string
   face_region: string | null
   is_active: boolean
   sort_order: number
+}
+
+function suggestSkuPrefix(name: string): string {
+  return name
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^A-Za-z]/g, '')
+    .toUpperCase()
+    .slice(0, 3)
 }
 
 interface Props {
@@ -29,6 +39,8 @@ export function CategoryForm({ initialData }: Props) {
   const [name, setName] = useState(initialData?.name ?? '')
   const [slug, setSlug] = useState(initialData?.slug ?? '')
   const [slugManual, setSlugManual] = useState(!!initialData)
+  const [skuPrefix, setSkuPrefix] = useState(initialData?.sku_prefix ?? '')
+  const [skuPrefixManual, setSkuPrefixManual] = useState(!!initialData)
   const [description, setDescription] = useState(initialData?.description ?? '')
   const [imageUrl, setImageUrl] = useState(initialData?.image_url ?? '')
   const [faceRegion, setFaceRegion] = useState(initialData?.face_region ?? '')
@@ -38,6 +50,7 @@ export function CategoryForm({ initialData }: Props) {
   function handleNameChange(value: string) {
     setName(value)
     if (!slugManual) setSlug(slugify(value))
+    if (!skuPrefixManual) setSkuPrefix(suggestSkuPrefix(value))
   }
 
   function handleSubmit() {
@@ -45,11 +58,16 @@ export function CategoryForm({ initialData }: Props) {
       setServerError('El nombre y el slug son obligatorios.')
       return
     }
+    if (!/^[A-Z]{3}$/.test(skuPrefix)) {
+      setServerError('El prefijo de SKU debe tener exactamente 3 letras (ej. LAB, BAS).')
+      return
+    }
     setServerError(null)
     const input: SaveCategoryInput = {
       id: initialData?.id,
       name: name.trim(),
       slug: slug.trim(),
+      sku_prefix: skuPrefix,
       description: description.trim(),
       image_url: imageUrl.trim(),
       face_region: faceRegion || null,
@@ -93,6 +111,22 @@ export function CategoryForm({ initialData }: Props) {
             disabled={isPending}
           />
           <p className="text-xs text-fg-3 mt-1">Solo letras minúsculas, números y guiones.</p>
+        </div>
+
+        <div>
+          <label className={lbl}>Prefijo de SKU *</label>
+          <input
+            className={`${field} uppercase`}
+            type="text"
+            maxLength={3}
+            value={skuPrefix}
+            onChange={(e) => { setSkuPrefix(e.target.value.toUpperCase()); setSkuPrefixManual(true) }}
+            placeholder="LAB"
+            disabled={isPending}
+          />
+          <p className="text-xs text-fg-3 mt-1">
+            3 letras, usadas para el SKU de los productos de esta categoría (ej. LULA-LAB-001).
+          </p>
         </div>
 
         <div>

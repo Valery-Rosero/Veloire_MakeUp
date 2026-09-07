@@ -36,13 +36,4 @@ export function calculateDiscountPct(
   return Math.round((1 - price / comparePrice) * 100)
 }
 
-export function slugify(text: string) {
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-}
+export { slugify } from '@/lib/slug'

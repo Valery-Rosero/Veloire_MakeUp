@@ -3,7 +3,9 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
+import { Scale } from 'lucide-react'
 import { calculateDiscountPct } from '@/lib/format'
+import { useCompareStore } from '@/lib/store/compare'
 
 interface ProductCardProps {
   slug: string
@@ -17,6 +19,10 @@ interface ProductCardProps {
   totalStock?: number
   index?: number
   variant?: 'a' | 'b'
+  // Cuando se dan ambos (y la categoría no es "otros"), la variante 'a' muestra
+  // un botón para agregar/quitar el producto del comparador.
+  productId?: string
+  categorySlug?: string | null
 }
 
 export function ProductCard({
@@ -31,9 +37,15 @@ export function ProductCard({
   totalStock,
   index = 0,
   variant = 'a',
+  productId,
+  categorySlug,
 }: ProductCardProps) {
   const isOutOfStock = totalStock !== undefined && totalStock === 0
   const discountPct = calculateDiscountPct(price, comparePrice)
+  const compareIds = useCompareStore((s) => s.productIds)
+  const toggleCompare = useCompareStore((s) => s.toggle)
+  const canCompare = variant === 'a' && !!productId && categorySlug !== 'otros'
+  const inCompare = canCompare && compareIds.includes(productId!)
 
   if (variant === 'b') {
     return (
@@ -160,8 +172,21 @@ export function ProductCard({
       viewport={{ once: true, margin: '-40px' }}
       transition={{ duration: 0.25, ease: 'easeOut', delay: index * 0.06 }}
       whileHover={{ y: -2 }}
-      className="group"
+      className="group relative"
     >
+      {canCompare && (
+        <button
+          type="button"
+          onClick={() => toggleCompare(productId!)}
+          aria-pressed={inCompare}
+          aria-label={inCompare ? 'Quitar de comparar' : 'Agregar a comparar'}
+          className={`absolute top-2 right-2 z-20 w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+            inCompare ? 'bg-accent text-white' : 'bg-card/90 text-fg-2 hover:text-accent'
+          }`}
+        >
+          <Scale size={14} />
+        </button>
+      )}
       <Link href={`/producto/${slug}`} className="block">
         {/* Imagen */}
         <div className="relative aspect-square overflow-hidden rounded-xl bg-alt">

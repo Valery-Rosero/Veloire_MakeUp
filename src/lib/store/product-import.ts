@@ -3,31 +3,35 @@ import { persist } from 'zustand/middleware'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export interface WizardShade {
+export interface ImportShade {
   id: string
-  excelRef: string   // original reference from Excel (e.g. "Ref 1")
-  name: string       // editable display name
-  hexColor: string   // hex color for shade swatch
-  imageUrl: string   // empty = no image uploaded
+  excelRef: string   // referencia original del Excel (ej. "Ref 1")
+  name: string        // nombre editable
+  hexColor: string
+  imageUrl: string
   stock: number
 }
 
-export interface WizardProduct {
+export interface ImportProduct {
   id: string
-  // From Excel
+  // Del Excel
+  sku: string
+  isExisting: boolean   // true = actualiza un producto ya existente (match por SKU)
   marca: string
   nombre: string
   descripcion: string
-  costoUnitario: number     // total_individual_mayor_con_impuestos
-  shades: WizardShade[]
-  // Step 2 — admin fills
-  precioVenta: string       // string to allow empty input, parse to float when needed
+  costoUnitario: number
   categoryId: string
+  categorySlug: string
+  comparison: Record<string, string>
+  shades: ImportShade[]
+  // Paso 2 — admin revisa/edita
+  precioVenta: string
   isFeatured: boolean
-  // Step 3
+  // Paso 3
   mainImageUrl: string
   noColorVariation: boolean
-  // Step 4
+  // Paso 4
   publishStatus: 'active' | 'draft'
 }
 
@@ -35,41 +39,42 @@ export interface Category {
   id: string
   name: string
   slug: string
+  sku_prefix: string
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-export function isStep2Complete(p: WizardProduct): boolean {
+export function isStep2Complete(p: ImportProduct): boolean {
   const price = parseFloat(p.precioVenta)
-  return !!p.categoryId && !isNaN(price) && price > 0
+  return !isNaN(price) && price > 0
 }
 
-export function isStep3Complete(p: WizardProduct): boolean {
+export function isStep3Complete(p: ImportProduct): boolean {
   return p.shades.every((s) => s.name.trim().length > 0)
 }
 
 // ─── Store ───────────────────────────────────────────────────────────────────
 
-interface SupplierOrderState {
+interface ProductImportState {
   step: 1 | 2 | 3 | 4
-  products: WizardProduct[]
+  products: ImportProduct[]
   productIdx: number
 
   setStep: (s: 1 | 2 | 3 | 4) => void
-  setProducts: (ps: WizardProduct[]) => void
+  setProducts: (ps: ImportProduct[]) => void
   setProductIdx: (i: number) => void
-  updateProduct: (id: string, changes: Partial<WizardProduct>) => void
-  updateShade: (productId: string, shadeId: string, changes: Partial<WizardShade>) => void
+  updateProduct: (id: string, changes: Partial<ImportProduct>) => void
+  updateShade: (productId: string, shadeId: string, changes: Partial<ImportShade>) => void
   reset: () => void
 }
 
 const initialState = {
   step: 1 as const,
-  products: [] as WizardProduct[],
+  products: [] as ImportProduct[],
   productIdx: 0,
 }
 
-export const useSupplierOrderStore = create<SupplierOrderState>()(
+export const useProductImportStore = create<ProductImportState>()(
   persist(
     (set) => ({
       ...initialState,
@@ -100,8 +105,7 @@ export const useSupplierOrderStore = create<SupplierOrderState>()(
       reset: () => set(initialState),
     }),
     {
-      name: 'veloire-supplier-order',
-      // Only persist the data fields, not the actions
+      name: 'veloire-product-import',
       partialize: (state) => ({
         step: state.step,
         products: state.products,

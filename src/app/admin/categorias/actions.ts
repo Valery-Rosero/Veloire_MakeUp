@@ -10,6 +10,7 @@ export interface SaveCategoryInput {
   id?: string
   name: string
   slug: string
+  sku_prefix: string
   description: string
   image_url: string
   face_region: string | null
@@ -25,6 +26,7 @@ export async function saveCategory(data: SaveCategoryInput): Promise<{ error?: s
   const fields = {
     name: data.name.trim(),
     slug: data.slug.trim(),
+    sku_prefix: data.sku_prefix.trim().toUpperCase(),
     description: data.description.trim() || null,
     image_url: data.image_url.trim() || null,
     face_region: data.face_region || null,
