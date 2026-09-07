@@ -55,7 +55,7 @@ Categorías de maquillaje. Cada una puede estar asociada a una zona del rostro.
 | `sort_order` | int | Orden de aparición |
 | `is_active` | bool | Visible en la tienda |
 | `face_region` | text | Zona del rostro para el FaceMap |
-| `sku_prefix` | text | Prefijo de 3 letras para el SKU autogenerado de sus productos (ej. `'LAB'`, `'BAS'`) — ver [PENDIENTE.md](PENDIENTE.md#comparador-de-productos) |
+| `sku_prefix` | text | Prefijo de 3 letras para el SKU autogenerado de sus productos (ej. `'LAB'`, `'BAS'`) — ver [FUNCIONALIDADES.md](FUNCIONALIDADES.md#comparador-de-productos) |
 
 ---
 

@@ -22,6 +22,7 @@ Estado: **En desarrollo activo**. El core de la tienda y el panel admin están o
 - Loading skeleton con `animate-pulse`
 - Paginación (`CatalogoPagination`)
 - Los productos sin stock activo no se muestran
+- Botón de comparar en cada tarjeta (ver [Comparador de productos](#comparador-de-productos))
 
 ### Producto (`/producto/[slug]`)
 
@@ -30,9 +31,18 @@ Estado: **En desarrollo activo**. El core de la tienda y el panel admin están o
 - Precio + precio de comparación tachado si existe
 - Botón "Agregar al carrito" — agrega al store de Zustand
 - Descripción del producto
+- Ficha técnica con los campos de comparación de su categoría (ver [Comparador de productos](#comparador-de-productos))
 - Sección de productos relacionados (misma categoría)
 - Metadata SEO dinámica (`meta_title`, `meta_description` por producto)
 - `notFound()` si el slug no existe o el producto está inactivo
+
+### Comparador de productos (`/comparar`)
+
+- Botón de agregar/quitar (ícono de balanza) en las tarjetas del catálogo — hasta 4 productos, guardados en `localStorage` vía Zustand (`src/lib/store/compare.ts`, key `veloire-compare`)
+- Bandeja flotante (`CompareTray`) visible con 2+ productos seleccionados, con link a `/comparar`
+- Tabla lado a lado en `/comparar` — permite comparar productos de **categorías distintas**, mostrando solo los campos en común
+- Los campos por categoría (fijos, no editables desde el admin) viven en `src/lib/comparison-fields.ts` — única fuente de verdad compartida con el formulario de producto, el importador Excel y esta tabla
+- Los valores de cada producto se guardan en `products.comparison` (jsonb)
 
 ### Carrito
 
@@ -161,27 +171,29 @@ Acceso: `role === 'admin'` en `profiles`. Verificado en el proxy y en el layout.
 - `ToggleProductStatus`: activar/desactivar sin entrar al formulario
 - `DeleteProductButton`: eliminar con confirmación
 - **Formulario de producto** (`ProductForm`):
-  - Nombre, slug (auto-generado), categoría, precio, precio comparación
+  - Nombre, slug (auto-generado), marca, categoría, precio, precio comparación
+  - SKU: autogenerado al elegir marca + categoría (`{MARCA}-{CATEGORIA}-{NNN}`), siempre editable
+  - Ficha de comparación: campos según la categoría elegida (ver [Comparador de productos](#comparador-de-productos)); no aparece para la categoría "Otros"
   - Estado (`draft`, `active`, `inactive`) y destacado
   - Meta title y meta description
   - `ImageUploader`: subir múltiples imágenes a Supabase Storage, reordenar, marcar principal
   - `ShadeForm`: gestionar tonos (nombre, color hex, stock, imagen, activo)
 
-### Pedido a proveedor (`/admin/productos/pedido-proveedor`)
+### Importar productos (`/admin/productos/importar`)
 
-Wizard de 4 pasos para registrar inventario nuevo:
+Reemplaza al antiguo wizard de "pedido a proveedor". Sigue siendo un asistente de 4 pasos, pero ahora es una sola herramienta que crea productos nuevos **o** actualiza los existentes, y llena la ficha de comparación de una vez:
 
-1. **Upload Excel**: sube un archivo `.xlsx` con el inventario del proveedor. Parser en `src/lib/excel-parser.ts`
-2. **Asignar productos**: mapea las filas del Excel a productos existentes o nuevos
-3. **Asignar tonos**: mapea los tonos del Excel a tonos del producto
-4. **Confirmación**: preview del pedido y confirmación. Actualiza stock en Supabase.
+1. **Subir Excel**: una hoja por categoría (nombre de hoja = nombre de categoría), con columnas de inventario (SKU, Marca, Nombre, Descripción, Tono/Referencia, Cantidad, Precio, Costo unitario) más las de comparación de esa categoría. Botón para descargar la plantilla (con dropdowns reales generados por `exceljs`) desde `/admin/productos/importar/plantilla`. Si un valor no está en la lista permitida, la importación se bloquea con el error exacto (hoja, fila, columna, valor, valores permitidos) — parser y validación en `src/lib/product-import/`.
+2. **Revisar productos**: precio de venta, SKU (editable), ficha de comparación prellenada — la categoría ya viene resuelta de la hoja, no se vuelve a preguntar. Sigue mostrando el calculador de rentabilidad (costo vs. precio) del wizard anterior.
+3. **Tonos e imágenes**: igual que antes — imagen principal, color/imagen por tono.
+4. **Confirmar**: si la fila traía un SKU que ya existe, **actualiza** ese producto (nunca borra tonos ausentes del lote); si no, **crea** uno nuevo.
 
-Estado del wizard persiste en `useSupplierOrderStore` (Zustand).
+Estado del wizard persiste en `useProductImportStore` (Zustand, key `veloire-product-import`).
 
 ### Categorías (`/admin/categorias`)
 
 - Lista de categorías con `sort_order`
-- CRUD completo: nombre, slug, zona del rostro (`face_region`), activa/inactiva
+- CRUD completo: nombre, slug, prefijo de SKU (3 letras, usado para autogenerar el SKU de sus productos), zona del rostro (`face_region`), activa/inactiva
 - `CategoryForm` con validación Zod
 
 ### Inventario (`/admin/inventario`)
@@ -264,9 +276,12 @@ El `Footer` siempre muestra:
 
 | Archivo | Descripción |
 |---|---|
-| `format.ts` | `formatPrice` (COP), `formatDate`, `slugify` |
+| `format.ts` | `formatPrice` (COP), `formatDate` (re-exporta `slugify` de `slug.ts`) |
+| `slug.ts` | `slugify` y `uniqueSlug` (colisiones), compartido por productos/categorías |
+| `sku.ts` | `abbreviateBrand` y `nextSkuForBrandCategory` — genera el SKU de un producto |
+| `comparison-fields.ts` | Campos de comparación fijos por categoría — única fuente de verdad (ver [Comparador de productos](#comparador-de-productos)) |
 | `catalogo.ts` | Fetcher del catálogo con filtros y paginación |
 | `face-regions.ts` | Mapeo de `face_region` a coordenadas del FaceMap |
-| `excel-parser.ts` | Parser de `.xlsx` para el wizard de proveedor |
+| `product-import/` | Parser, validación y generación de plantilla (`exceljs`) del importador de productos |
 | `auth-guard.ts` | Helper para verificar auth en Server Actions |
 | `rate-limit.ts` | Sliding window limiter en memoria |

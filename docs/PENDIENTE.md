@@ -23,23 +23,14 @@ Plantilla `OrderCancelled` creada. Se envía automáticamente cuando el cliente 
 - `src/app/not-found.tsx` — 404 con diseño de Vèloire (font display italic, CTA a catálogo e inicio)
 - `src/app/error.tsx` — error boundary con botón "Intentar de nuevo" y enlace a inicio
 
----
+### ~~Comparador de productos~~ ✅ Completado
 
-## 🚧 En construcción
+Las clientas pueden comparar 2-4 productos lado a lado (ingredientes, tipo de piel, acabado, duración, etc.), con campos que varían según la categoría. Probado y confirmado funcionando en producción (el importador Excel, la generación de SKU, y el comparador en la tienda).
 
-### Comparador de productos
-
-Las clientas van a poder comparar 2-4 productos lado a lado (ingredientes, tipo de piel, acabado, duración, etc.), con campos que varían según la categoría del producto. Los datos de comparación se llenan por Excel, en un importador unificado que **reemplaza** al wizard actual de "pedido a proveedor".
-
-Piezas del diseño (plan completo en `.claude/plans/rustling-cuddling-engelbart.md` de la sesión donde se diseñó):
-- `src/lib/comparison-fields.ts` — única fuente de verdad de qué campos tiene cada categoría y sus valores permitidos (fijo en código, no editable desde el admin).
-- `products.sku` (autogenerado `{MARCA}-{CATEGORIA}-{NNN}`, editable) y `products.comparison` (jsonb) — nuevas columnas.
-- `categories.sku_prefix` — prefijo de 3 letras por categoría para el SKU.
-- Excel unificado: una hoja por categoría, con columnas de inventario (Marca, Nombre, Tonos, Cantidad, Precio, Costo unitario) + las de comparación de esa categoría. Dropdowns reales vía `exceljs` (nueva dependencia) + validación estricta al importar.
-- El SKU vincula cada fila del Excel a un producto existente (actualiza) o nuevo (crea) — ya no hace falta el matching por nombre.
-- Comparador en `/comparar`: permite comparar entre categorías distintas, mostrando solo los campos en común.
-
-Categorías actuales y sus campos específicos de comparación: ver `CATEGORY_FIELDS` en `src/lib/comparison-fields.ts`.
+- `src/lib/comparison-fields.ts` — única fuente de verdad de qué campos tiene cada categoría y sus valores permitidos (fijo en código, no editable desde el admin). Ver `CATEGORY_FIELDS` ahí para la lista completa por categoría.
+- `products.sku` (autogenerado `{MARCA}-{CATEGORIA}-{NNN}`, editable), `products.comparison` (jsonb), `categories.sku_prefix`.
+- Importador unificado en `/admin/productos/importar` (reemplazó al wizard de "pedido a proveedor"): Excel con una hoja por categoría, dropdowns reales vía `exceljs`, plantilla descargable, validación estricta al importar. El SKU vincula cada fila a un producto existente (actualiza) o nuevo (crea).
+- Comparador en `/comparar`: permite comparar entre categorías distintas, mostrando solo los campos en común. Botón de agregar/quitar en las tarjetas de `/catalogo`, bandeja flotante, ficha técnica en cada producto.
 
 ---
 
