@@ -81,6 +81,12 @@ export interface Database {
         Update: Record<string, never>
         Relationships: []
       }
+      reviews: {
+        Row: { id: string; product_id: string; user_id: string; rating: number; comment: string | null; reviewer_name: string; created_at: string }
+        Insert: { product_id: string; user_id: string; rating: number; comment?: string | null; reviewer_name: string }
+        Update: { rating?: number; comment?: string | null }
+        Relationships: []
+      }
     }
     Views: {
       v_inventory_summary: {

@@ -62,9 +62,13 @@ Nota para el futuro: la tabla no tiene limpieza automática de filas viejas — 
 
 ## Baja prioridad — Features adicionales
 
-### Reseñas y valoraciones
+### ~~Reseñas y valoraciones~~ ✅ Completado
 
-No hay sistema de reseñas. Las clientas no pueden dejar feedback sobre los productos. Implicaría una tabla `reviews` nueva en Supabase y un componente de estrellas.
+Solo pueden reseñar quienes compraron el producto (verificado vía RLS contra `orders`/`order_items` con estado `paid`/`preparing`/`shipped`/`delivered`) — probado en vivo: compra real acepta, sin compra la política RLS rechaza el insert. Publicación inmediata, sin moderación. Una reseña por clienta por producto (`unique(product_id, user_id)`, editable). Se muestra solo en `/producto/[slug]` (no en las tarjetas del catálogo). Agrega `aggregateRating` al JSON-LD del producto cuando hay reseñas.
+
+- Tabla `reviews` (RLS: lectura pública, escritura solo compra verificada y dueño de la fila).
+- `src/components/store/StarRating.tsx`, `ReviewsSection.tsx`.
+- `src/app/(store)/producto/[slug]/actions.ts` — `submitReview()`, `deleteReview()`.
 
 ### Cupones y descuentos
 
@@ -95,9 +99,11 @@ No hay integración de analytics (Google Analytics, Plausible, Fathom). No se pu
 
 Actualmente `/catalogo` y `/producto/[slug]` son completamente dinámicos (SSR en cada request). Se podrían usar con ISR (`revalidate`) para mejorar el tiempo de carga y reducir queries a Supabase.
 
-### Multi-imagen por tono
+### ~~Multi-imagen por tono~~ ✅ Ya funcionaba (doc desactualizado)
 
-`product_shades.image_url` guarda una sola imagen por tono. El formulario de producto permite subirla, pero la galería del producto no muestra la imagen del tono seleccionado (siempre muestra la imagen principal del producto).
+Este pendiente estaba mal — `ProductClient.tsx::handleShadeSelect` ya cambia la imagen principal a `shade.image_url` al seleccionar un tono (y también en la carga inicial, vía `firstInStock`). Nunca se había notado porque ningún tono tenía todavía una imagen propia cargada. Probado en vivo asignándole una imagen a un tono: la página sí la muestra correctamente. El aro de "seleccionado" en `ShadeSelector` ya indica el tono activo — no hacía falta que la miniatura de la galería también se resaltara, son dos indicadores distintos y está bien así.
+
+Si en el futuro se quiere ir más allá (varias fotos por tono, no solo una), eso sí sería una feature nueva: tabla `shade_images` + `ImageUploader` múltiple en `ProductForm` — no se hizo, no se pidió esta vez.
 
 ---
 

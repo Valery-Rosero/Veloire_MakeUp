@@ -14,6 +14,14 @@ export interface ProductShade {
   sort_order: number
 }
 
+export interface Review {
+  id: string
+  rating: number
+  comment: string | null
+  reviewer_name: string
+  created_at: string
+}
+
 export interface ProductDetail {
   id: string
   category_id: string

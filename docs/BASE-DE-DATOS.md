@@ -57,6 +57,29 @@ Respaldo del rate limiter (`src/lib/rate-limit.ts::isRateLimited()`) — reempla
 
 ---
 
+### `reviews`
+
+Reseñas de producto. Solo puede reseñar quien compró el producto (verificado en la propia policy de RLS, no solo en la app).
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `id` | uuid | PK |
+| `product_id` | uuid | FK → `products.id`, `on delete cascade` |
+| `user_id` | uuid | FK → `profiles.id`, `on delete cascade` |
+| `rating` | smallint | 1 a 5 (`check`) |
+| `comment` | text | Opcional |
+| `reviewer_name` | text | Snapshot del nombre al momento de reseñar (no un join a `profiles`, que tiene RLS de solo-lectura-propia) |
+| `created_at` | timestamp | — |
+
+Restricción `unique(product_id, user_id)` — una reseña por clienta por producto; escribir de nuevo actualiza la existente (`upsert`).
+
+**RLS:**
+- SELECT: público (`using (true)`).
+- INSERT: `auth.uid() = user_id` **y** debe existir un `order_items` + `orders` de esa clienta (`customer_email = auth.email()`) para ese `product_id` con estado `paid`/`preparing`/`shipped`/`delivered`.
+- UPDATE/DELETE: solo la propia fila (`auth.uid() = user_id`).
+
+---
+
 ### `categories`
 
 Categorías de maquillaje. Cada una puede estar asociada a una zona del rostro.

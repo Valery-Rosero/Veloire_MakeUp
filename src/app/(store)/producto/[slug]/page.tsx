@@ -2,9 +2,13 @@ import { cache } from 'react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import type { ProductDetail } from '@/types/product'
+import type { ProductDetail, Review } from '@/types/product'
 import { ProductClient } from '@/components/store/ProductClient'
 import { ProductCard } from '@/components/store/ProductCard'
+import { ReviewsSection } from '@/components/store/ReviewsSection'
+import type { OrderStatus } from '@/types/database'
+
+const QUALIFYING_STATUSES: OrderStatus[] = ['paid', 'preparing', 'shipped', 'delivered']
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -83,6 +87,58 @@ async function getRelatedProducts(product: ProductDetail): Promise<RelatedProduc
   }
 }
 
+async function getReviews(productId: string): Promise<Review[]> {
+  try {
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from('reviews')
+      .select('id, rating, comment, reviewer_name, created_at')
+      .eq('product_id', productId)
+      .order('created_at', { ascending: false })
+    return (data as Review[] | null) ?? []
+  } catch {
+    return []
+  }
+}
+
+interface ReviewEligibility {
+  isLoggedIn: boolean
+  canReview: boolean
+  existingReview: Review | null
+}
+
+async function getReviewEligibility(productId: string): Promise<ReviewEligibility> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { isLoggedIn: false, canReview: false, existingReview: null }
+
+    const [{ data: eligible }, { data: existingRows }] = await Promise.all([
+      supabase
+        .from('order_items')
+        .select('order_id, orders!inner(status, customer_email)')
+        .eq('product_id', productId)
+        .eq('orders.customer_email', user.email!)
+        .in('orders.status', QUALIFYING_STATUSES)
+        .limit(1),
+      supabase
+        .from('reviews')
+        .select('id, rating, comment, reviewer_name, created_at')
+        .eq('product_id', productId)
+        .eq('user_id', user.id)
+        .limit(1),
+    ])
+
+    return {
+      isLoggedIn: true,
+      canReview: (eligible?.length ?? 0) > 0,
+      existingReview: (existingRows as Review[] | null)?.[0] ?? null,
+    }
+  } catch {
+    return { isLoggedIn: false, canReview: false, existingReview: null }
+  }
+}
+
 // ─── Metadata ─────────────────────────────────────────────────────────────────
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -117,11 +173,18 @@ export default async function ProductoPage({ params }: PageProps) {
   const product = await getProduct(slug)
   if (!product) notFound()
 
-  const related = await getRelatedProducts(product)
+  const [related, reviews, reviewEligibility] = await Promise.all([
+    getRelatedProducts(product),
+    getReviews(product.id),
+    getReviewEligibility(product.id),
+  ])
 
   const totalStock = product.product_shades
     .filter((s) => s.is_active)
     .reduce((sum, s) => sum + s.stock, 0)
+
+  const averageRating =
+    reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -138,6 +201,15 @@ export default async function ProductoPage({ params }: PageProps) {
       availability:
         totalStock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
     },
+    ...(reviews.length > 0
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: averageRating.toFixed(1),
+            reviewCount: reviews.length,
+          },
+        }
+      : {}),
   }
 
   return (
@@ -151,6 +223,17 @@ export default async function ProductoPage({ params }: PageProps) {
         <div className="max-w-7xl mx-auto">
           <ProductClient product={product} />
         </div>
+
+        <section className="max-w-4xl mx-auto px-4 mt-16 md:mt-20">
+          <ReviewsSection
+            productSlug={slug}
+            productId={product.id}
+            reviews={reviews}
+            isLoggedIn={reviewEligibility.isLoggedIn}
+            canReview={reviewEligibility.canReview}
+            existingReview={reviewEligibility.existingReview}
+          />
+        </section>
 
         {related.length > 0 && (
           <section className="max-w-7xl mx-auto px-4 mt-16 md:mt-20 pb-16">

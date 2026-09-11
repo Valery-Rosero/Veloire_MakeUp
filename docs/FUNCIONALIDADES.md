@@ -32,8 +32,9 @@ Estado: **En desarrollo activo**. El core de la tienda y el panel admin están o
 - Botón "Agregar al carrito" — agrega al store de Zustand
 - Descripción del producto
 - Ficha técnica con los campos de comparación de su categoría (ver [Comparador de productos](#comparador-de-productos))
+- Reseñas y valoración promedio — solo clientas que compraron el producto pueden reseñar (verificado por RLS), publicación inmediata, una reseña por clienta por producto (editable). `aggregateRating` se agrega al JSON-LD cuando hay reseñas
 - Sección de productos relacionados (misma categoría)
-- Metadata SEO dinámica (`meta_title`, `meta_description` por producto)
+- Metadata SEO dinámica (`meta_title`, `meta_description` por producto) + JSON-LD `Product` (Schema.org)
 - `notFound()` si el slug no existe o el producto está inactivo
 
 ### Comparador de productos (`/comparar`)
