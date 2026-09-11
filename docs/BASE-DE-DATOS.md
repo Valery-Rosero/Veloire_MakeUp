@@ -43,6 +43,20 @@ Historial de auditoría de todo lo que se hace en el panel admin (productos, cat
 
 ---
 
+### `rate_limit_hits`
+
+Respaldo del rate limiter (`src/lib/rate-limit.ts::isRateLimited()`) — reemplaza al `Map` en memoria que no se compartía entre instancias serverless. Usado hoy por `POST /api/orders` (5 solicitudes/min por IP).
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `id` | bigint (identity) | PK |
+| `key` | text | Ej: la IP del cliente (`getClientIp()`) |
+| `created_at` | timestamptz | — |
+
+**RLS:** activo, sin policies permisivas — solo `createAdminClient()`. No tiene limpieza automática de filas viejas todavía (ver `PENDIENTE.md`).
+
+---
+
 ### `categories`
 
 Categorías de maquillaje. Cada una puede estar asociada a una zona del rostro.
@@ -123,7 +137,7 @@ Pedidos de la tienda.
 | Columna | Tipo | Notas |
 |---|---|---|
 | `id` | uuid | PK |
-| `order_number` | text | Número legible (ej: `VL-001`) |
+| `order_number` | text | Número legible (ej: `VEL-20260908-00012`) |
 | `status` | OrderStatus | Ver enum más abajo |
 | `customer_name` | text | — |
 | `customer_email` | text | — |
@@ -268,7 +282,7 @@ Estas funciones tienen `search_path = pg_catalog, public` para evitar ataques de
 |---|---|
 | `set_updated_at()` | Trigger para actualizar `updated_at` automáticamente |
 | `log_order_status_change()` | Trigger que inserta en `order_history` al cambiar estado del pedido |
-| `generate_order_number()` | Genera números de pedido correlativos (`VL-001`, `VL-002`, …) |
+| `generate_order_number()` | Genera números de pedido con formato `VEL-YYYYMMDD-NNNNN` |
 | `discount_stock_on_payment()` | Trigger que descuenta stock cuando el pago es confirmado |
 | `fn_auto_deactivate_product()` | Desactiva un producto automáticamente si todo su stock llega a 0 |
 

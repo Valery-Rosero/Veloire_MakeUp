@@ -10,7 +10,7 @@ interface OrderBody extends Record<string, unknown> {
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request.headers)
-  if (isRateLimited(ip, 5, 60_000)) {
+  if (await isRateLimited(ip, 5, 60_000)) {
     return NextResponse.json(
       { error: 'Demasiadas solicitudes. Espera un momento antes de intentarlo de nuevo.' },
       { status: 429 }

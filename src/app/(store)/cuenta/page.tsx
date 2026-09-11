@@ -34,7 +34,18 @@ interface OrderRow {
   item_count: number
 }
 
-export default async function CuentaPage() {
+const PAGE_SIZE = 10
+
+interface PageProps {
+  searchParams: Promise<{ page?: string }>
+}
+
+export default async function CuentaPage({ searchParams }: PageProps) {
+  const { page } = await searchParams
+  const currentPage = Math.max(1, parseInt(page ?? '1', 10))
+  const from = (currentPage - 1) * PAGE_SIZE
+  const to = from + PAGE_SIZE - 1
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -44,14 +55,15 @@ export default async function CuentaPage() {
     supabase.from('profiles').select('full_name, phone').eq('id', user.id).limit(1),
     supabase
       .from('v_orders_detail')
-      .select('id, order_number, status, total, created_at, item_count')
+      .select('id, order_number, status, total, created_at, item_count', { count: 'exact' })
       .eq('customer_email', user.email!)
       .order('created_at', { ascending: false })
-      .limit(20),
+      .range(from, to),
   ])
 
   const profile = (profileResult.data as Array<{ full_name: string | null; phone: string | null }> | null)?.[0]
   const orders = (ordersResult.data as OrderRow[] | null) ?? []
+  const totalPages = Math.ceil((ordersResult.count ?? 0) / PAGE_SIZE)
 
   return (
     <main className="container mx-auto px-4 py-10 max-w-3xl">
@@ -134,6 +146,24 @@ export default async function CuentaPage() {
                     <path d="M9 18l6-6-6-6" />
                   </svg>
                 </div>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="flex justify-center gap-2 mt-5">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <Link
+                key={p}
+                href={`/cuenta?page=${p}`}
+                className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-body transition-colors ${
+                  p === currentPage
+                    ? 'bg-noir text-beige'
+                    : 'bg-card border border-rim text-fg-2 hover:border-rim-2'
+                }`}
+              >
+                {p}
               </Link>
             ))}
           </div>

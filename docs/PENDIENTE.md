@@ -36,42 +36,27 @@ Las clientas pueden comparar 2-4 productos lado a lado (ingredientes, tipo de pi
 
 ## Media prioridad — Mejoras importantes
 
-### Loading states faltantes
+### ~~Loading states faltantes~~ ✅ Completado
 
-Solo `/catalogo` tiene `loading.tsx`. Las siguientes rutas no tienen skeleton ni spinner:
-- `/producto/[slug]`
-- `/cuenta`
-- `/admin/pedidos`
-- `/admin/productos`
-- `/admin/inventario`
+`loading.tsx` agregado en `/producto/[slug]`, `/cuenta`, `/admin/pedidos`, `/admin/productos` y `/admin/inventario`, cada uno replicando el layout real de su página (mismo grid/columnas) para no generar salto de layout al terminar de cargar.
 
-### Rate limiter en memoria — no escala
+### ~~Rate limiter en memoria — no escala~~ ✅ Completado
 
-`src/lib/rate-limit.ts` usa un `Map` en memoria. En Vercel (serverless) cada función corre en una instancia separada, por lo que el límite **no se comparte entre instancias**. Para producción real, reemplazar con **Upstash Redis** + `@upstash/ratelimit`.
+`src/lib/rate-limit.ts` ahora usa la tabla `rate_limit_hits` en Supabase en vez de un `Map` en memoria — el límite se comparte entre todas las instancias serverless. Se evaluó Upstash Redis pero se prefirió reutilizar Supabase (ya está pagado/configurado) en vez de sumar otro servicio externo. Probado en vivo: 5 requests pasan, la 6ª devuelve 429, IPs distintas no se bloquean entre sí.
 
-### SEO — Structured data
+Nota para el futuro: la tabla no tiene limpieza automática de filas viejas — con el tráfico actual no es un problema, pero si crece mucho conviene un `DELETE` periódico (`created_at` más viejo que unas horas) vía SQL manual o un cron.
 
-Los productos tienen `meta_title` y `meta_description` pero no tienen Schema.org `Product` markup (JSON-LD). Esto mejora el ranking en Google y permite rich snippets (precio, disponibilidad, valoraciones).
+### ~~SEO — Structured data~~ ✅ Completado
 
-```tsx
-// Agregar en /producto/[slug]/page.tsx
-<script type="application/ld+json">
-  {JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "Product",
-    "name": product.name,
-    "offers": { "@type": "Offer", "price": product.price, ... }
-  })}
-</script>
-```
+`/producto/[slug]/page.tsx` ya genera el JSON-LD de `Product` (nombre, descripción, imágenes, oferta con precio/disponibilidad) — se descubrió implementado al revisar este pendiente, este doc estaba desactualizado.
 
-### Sitemap y robots.txt
+### ~~Sitemap y robots.txt~~ ✅ Completado
 
-No hay `src/app/sitemap.ts` ni `src/app/robots.ts`. Los bots no saben qué indexar.
+`src/app/sitemap.ts` (home, catálogo, nosotras, contacto, envíos, y cada producto activo) y `src/app/robots.ts` (bloquea `/admin`, `/cuenta`, `/checkout`, `/api`, `/pedido`). El dominio sale de `NEXT_PUBLIC_SITE_URL` (`src/lib/site.ts`, cae a `localhost:3000` si no está seteada) — **falta configurar esa variable de entorno con el dominio real cuando exista**. También se agregó `metadataBase` al layout raíz, que faltaba.
 
-### Paginación en `/cuenta`
+### ~~Paginación en `/cuenta`~~ ✅ Completado
 
-El historial de pedidos en cuenta muestra máximo 20. Si hay más, no hay forma de ver los anteriores. Agregar paginación simple o scroll infinito.
+10 pedidos por página, mismo patrón de paginación que `/admin/pedidos` y `/admin/productos` (`?page=N`, `range()` + `count: 'exact'`).
 
 ---
 

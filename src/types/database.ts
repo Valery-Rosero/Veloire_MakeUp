@@ -75,6 +75,12 @@ export interface Database {
         Update: Record<string, never>
         Relationships: []
       }
+      rate_limit_hits: {
+        Row: { id: number; key: string; created_at: string }
+        Insert: { key: string }
+        Update: Record<string, never>
+        Relationships: []
+      }
     }
     Views: {
       v_inventory_summary: {

@@ -1,21 +1,25 @@
-// Sliding window rate limiter — in-memory, per server instance.
-// Suitable for single-instance deployments (Vercel serverless, VPS).
-// For multi-instance scale, replace with Upstash Redis.
+// Sliding window rate limiter — respaldado en Postgres (tabla rate_limit_hits),
+// para que el límite se comparta entre todas las instancias serverless en vez
+// de vivir en memoria de una sola.
+import { createAdminClient } from '@/lib/supabase/server'
 
-const store = new Map<string, number[]>()
-
-export function isRateLimited(
+export async function isRateLimited(
   key: string,
   limit: number,
   windowMs: number,
-): boolean {
-  const now = Date.now()
-  const timestamps = (store.get(key) ?? []).filter((t) => now - t < windowMs)
+): Promise<boolean> {
+  const supabase = await createAdminClient()
+  const windowStart = new Date(Date.now() - windowMs).toISOString()
 
-  if (timestamps.length >= limit) return true
+  const { count } = await supabase
+    .from('rate_limit_hits')
+    .select('*', { count: 'exact', head: true })
+    .eq('key', key)
+    .gte('created_at', windowStart)
 
-  timestamps.push(now)
-  store.set(key, timestamps)
+  if ((count ?? 0) >= limit) return true
+
+  await supabase.from('rate_limit_hits').insert({ key })
   return false
 }
 

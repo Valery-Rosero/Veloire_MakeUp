@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { ThemeProvider } from '@/components/ui/ThemeProvider'
+import { SITE_URL } from '@/lib/site'
 import './globals.css'
 
 const inter = Inter({
@@ -11,6 +12,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: 'Vèloire — Maquillaje',
   description: 'Tienda de maquillaje online. Encuentra tu tono perfecto entre nuestra colección artesanal.',
 }
