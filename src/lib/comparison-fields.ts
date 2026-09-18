@@ -10,7 +10,7 @@ export interface ComparisonFieldDef {
 export const UNIVERSAL_FIELDS: ComparisonFieldDef[] = [
   { key: 'tipo_de_piel', label: 'Tipo de piel', type: 'select', options: ['Grasa', 'Seca', 'Mixta', 'Normal', 'Todo tipo'] },
   { key: 'apto_piel_sensible', label: 'Apto piel sensible', type: 'boolean' },
-  { key: 'duracion', label: 'Duración', type: 'select', options: ['4h', '6h', '8h', '12h+'] },
+  { key: 'duracion', label: 'Duración', type: 'select', options: ['Bajo', 'Medio', 'Alto'] },
   { key: 'resistente_al_agua', label: 'Resistente al agua', type: 'boolean' },
   { key: 'libre_crueldad_animal', label: 'Libre de crueldad animal', type: 'boolean' },
   { key: 'vegano', label: 'Vegano', type: 'boolean' },
@@ -46,6 +46,10 @@ export const CATEGORY_FIELDS: Record<string, ComparisonFieldDef[]> = {
   cejas: [
     { key: 'formato', label: 'Formato', type: 'select', options: ['Lápiz', 'Gel', 'Polvo', 'Pomada'] },
     { key: 'grosor_de_punta', label: 'Grosor de punta', type: 'select', options: ['Fina', 'Biselada', 'N/A'] },
+  ],
+  pestaninas: [
+    { key: 'formato', label: 'Formato', type: 'select', options: ['Crema', 'Gel', 'Líquido'] },
+    { key: 'efecto', label: 'Efecto', type: 'select', options: ['Volumen', 'Alargador', 'Definición', 'Curvatura', 'Natural', 'Efecto extensiones'] },
   ],
   otros: [],
 }

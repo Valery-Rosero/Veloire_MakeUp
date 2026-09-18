@@ -35,8 +35,15 @@ export async function readWorkbookSheets(
 }
 
 function norm(s: string): string {
-  return String(s).trim().toLowerCase()
+  return String(s)
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
 }
+
+// Hojas que legítimamente no son de categoría — se ignoran sin avisar.
+const IGNORED_SHEET_NAMES = new Set(['leeme', 'léeme', 'readme', 'precios', 'instrucciones'].map(norm))
 
 // Agrupa filas por SKU (o marca+nombre si no hay SKU aún), con carry-forward
 // para celdas combinadas — igual que el importador anterior, extendido a SKU
@@ -47,10 +54,16 @@ export function parseWorkbook(
 ): ParseResult {
   const groups: ParsedImportGroup[] = []
   const errors: ImportValidationError[] = []
+  const unmatchedSheets: string[] = []
 
   for (const [sheetName, rows] of Object.entries(sheets)) {
+    if (rows.length === 0 || IGNORED_SHEET_NAMES.has(norm(sheetName))) continue
+
     const category = categories.find((c) => norm(c.name) === norm(sheetName))
-    if (!category || rows.length === 0) continue
+    if (!category) {
+      unmatchedSheets.push(sheetName)
+      continue
+    }
 
     const fields = getFieldsForCategory(category.slug)
     const byGroupKey = new Map<string, ParsedImportGroup>()
@@ -141,5 +154,5 @@ export function parseWorkbook(
     }
   }
 
-  return { groups, errors }
+  return { groups, errors, unmatchedSheets }
 }

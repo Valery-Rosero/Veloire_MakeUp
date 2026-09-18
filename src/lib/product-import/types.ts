@@ -33,4 +33,9 @@ export interface ParsedImportGroup {
 export interface ParseResult {
   groups: ParsedImportGroup[]
   errors: ImportValidationError[]
+  // Hojas con datos que no coinciden con ninguna categoría existente — se
+  // ignoran al armar `groups`, pero se listan para que el admin sepa que
+  // faltó crear esa categoría (o corregir el nombre de la hoja) en vez de
+  // perder esas filas en silencio.
+  unmatchedSheets: string[]
 }

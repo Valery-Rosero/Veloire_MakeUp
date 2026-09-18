@@ -31,6 +31,28 @@ function ValidationErrorsPanel({ errors }: { errors: ImportValidationError[] }) 
   )
 }
 
+// ─── Aviso de hojas sin categoría ──────────────────────────────────────────────
+
+function UnmatchedSheetsWarning({ sheets }: { sheets: string[] }) {
+  return (
+    <div className="bg-warning/10 border border-warning/30 rounded-xl p-4 mt-4">
+      <p className="font-body text-sm font-medium text-warning mb-1.5">
+        {sheets.length === 1 ? 'Esta hoja no coincide' : 'Estas hojas no coinciden'} con ninguna categoría — sus filas no se importaron
+      </p>
+      <p className="font-body text-xs text-fg-2 mb-2">
+        {sheets.map((s) => `"${s}"`).join(', ')}
+      </p>
+      <p className="font-body text-xs text-fg-3">
+        Si es una categoría nueva, créala primero en{' '}
+        <a href="/admin/categorias/nueva" target="_blank" className="text-accent hover:underline underline-offset-2">
+          Categorías
+        </a>{' '}
+        con ese nombre exacto y vuelve a subir el archivo. Si fue un error de escritura, corrige el nombre de la hoja en el Excel.
+      </p>
+    </div>
+  )
+}
+
 // ─── Preview card ─────────────────────────────────────────────────────────────
 
 function ProductPreviewCard({ p }: { p: ImportProduct }) {
@@ -70,12 +92,14 @@ export function Step1Upload({ categories }: { categories: Category[] }) {
   const [parsing, setParsing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [validationErrors, setValidationErrors] = useState<ImportValidationError[]>([])
+  const [unmatchedSheets, setUnmatchedSheets] = useState<string[]>([])
   const [preview, setPreview] = useState<ImportProduct[]>([])
 
   const parseFile = useCallback(async (file: File) => {
     setParsing(true)
     setError(null)
     setValidationErrors([])
+    setUnmatchedSheets([])
     setPreview([])
 
     const { sheets, error: readError } = await readWorkbookSheets(file)
@@ -85,7 +109,8 @@ export function Step1Upload({ categories }: { categories: Category[] }) {
       return
     }
 
-    const { groups, errors } = parseWorkbook(sheets, categories)
+    const { groups, errors, unmatchedSheets: unmatched } = parseWorkbook(sheets, categories)
+    setUnmatchedSheets(unmatched)
 
     if (errors.length > 0) {
       setValidationErrors(errors)
@@ -94,7 +119,11 @@ export function Step1Upload({ categories }: { categories: Category[] }) {
     }
 
     if (groups.length === 0) {
-      setError('No se detectó ningún producto. Revisa que los nombres de las hojas coincidan con tus categorías.')
+      setError(
+        unmatched.length > 0
+          ? 'Ninguna hoja coincidió con una categoría existente. Revisa el aviso de abajo.'
+          : 'No se detectó ningún producto. Revisa que los nombres de las hojas coincidan con tus categorías.'
+      )
       setParsing(false)
       return
     }
@@ -154,6 +183,7 @@ export function Step1Upload({ categories }: { categories: Category[] }) {
     setPreview([])
     setError(null)
     setValidationErrors([])
+    setUnmatchedSheets([])
   }
 
   const handleContinue = () => {
@@ -177,7 +207,9 @@ export function Step1Upload({ categories }: { categories: Category[] }) {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1 mb-6">
+        {unmatchedSheets.length > 0 && <UnmatchedSheetsWarning sheets={unmatchedSheets} />}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1 mb-6 mt-4">
           {preview.map((p) => (
             <ProductPreviewCard key={p.id} p={p} />
           ))}
@@ -253,6 +285,7 @@ export function Step1Upload({ categories }: { categories: Category[] }) {
       )}
 
       {validationErrors.length > 0 && <ValidationErrorsPanel errors={validationErrors} />}
+      {unmatchedSheets.length > 0 && <UnmatchedSheetsWarning sheets={unmatchedSheets} />}
     </div>
   )
 }
