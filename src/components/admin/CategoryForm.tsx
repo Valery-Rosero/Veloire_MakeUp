@@ -5,7 +5,7 @@ import { Loader2 } from 'lucide-react'
 import { saveCategory, type SaveCategoryInput } from '@/app/admin/categorias/actions'
 import { Input } from '@/components/ui/Input'
 import { FACE_REGIONS } from '@/lib/face-regions'
-import { slugify } from '@/lib/format'
+import { slugify, suggestSkuPrefix } from '@/lib/slug'
 
 interface InitialData {
   id: string
@@ -17,15 +17,6 @@ interface InitialData {
   face_region: string | null
   is_active: boolean
   sort_order: number
-}
-
-function suggestSkuPrefix(name: string): string {
-  return name
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^A-Za-z]/g, '')
-    .toUpperCase()
-    .slice(0, 3)
 }
 
 interface Props {

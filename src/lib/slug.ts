@@ -19,3 +19,14 @@ export function uniqueSlug(base: string, existing: Set<string>): string {
   existing.add(slug)
   return slug
 }
+
+// Prefijo de SKU sugerido a partir de un nombre (ej. de categoría o marca): primeras
+// 3 letras en mayúsculas, sin tildes ni caracteres no alfabéticos. Siempre editable.
+export function suggestSkuPrefix(name: string): string {
+  return name
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^A-Za-z]/g, '')
+    .toUpperCase()
+    .slice(0, 3)
+}

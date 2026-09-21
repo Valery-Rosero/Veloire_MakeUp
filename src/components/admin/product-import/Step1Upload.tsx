@@ -1,12 +1,17 @@
 'use client'
 
-import { useRef, useState, useCallback } from 'react'
-import { FileSpreadsheet, Upload, AlertCircle, Download, ChevronRight, RotateCcw } from 'lucide-react'
+import { useRef, useState, useCallback, useTransition } from 'react'
+import { FileSpreadsheet, Upload, AlertCircle, Download, ChevronRight, RotateCcw, Plus, Loader2 } from 'lucide-react'
 import { useProductImportStore, type ImportProduct, type Category } from '@/lib/store/product-import'
 import { readWorkbookSheets, parseWorkbook } from '@/lib/product-import/parser'
 import type { ImportValidationError } from '@/lib/product-import/types'
 import { nextSkuForBrandCategory } from '@/lib/sku'
 import { getExistingSkus } from '@/app/admin/productos/importar/actions'
+import { createCategoryQuick } from '@/app/admin/categorias/actions'
+import { suggestSkuPrefix } from '@/lib/slug'
+import { FACE_REGIONS } from '@/lib/face-regions'
+
+type Sheets = Record<string, Record<string, unknown>[]>
 
 // ─── Panel de errores de validación ───────────────────────────────────────────
 
@@ -31,24 +36,147 @@ function ValidationErrorsPanel({ errors }: { errors: ImportValidationError[] }) 
   )
 }
 
+// ─── Crear categoría al vuelo desde una hoja sin coincidencia ─────────────────
+
+function QuickCreateCategory({
+  sheetName,
+  onCreated,
+}: {
+  sheetName: string
+  onCreated: (category: Category) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [isPending, startTransition] = useTransition()
+  const [name, setName] = useState(sheetName)
+  const [skuPrefix, setSkuPrefix] = useState(suggestSkuPrefix(sheetName))
+  const [faceRegion, setFaceRegion] = useState('')
+  const [error, setError] = useState<string | null>(null)
+
+  const field =
+    'w-full rounded-lg border border-rim px-3 py-2 text-sm bg-card text-fg outline-none transition-colors hover:border-rim-2 focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-50 font-body'
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mt-2 inline-flex items-center gap-1.5 text-xs font-body font-medium text-accent hover:underline underline-offset-2"
+      >
+        <Plus size={13} />
+        Crear categoría &quot;{sheetName}&quot; ahora
+      </button>
+    )
+  }
+
+  function handleCreate() {
+    if (!name.trim()) {
+      setError('El nombre es obligatorio.')
+      return
+    }
+    if (!/^[A-Z]{3}$/.test(skuPrefix)) {
+      setError('El prefijo de SKU debe tener exactamente 3 letras.')
+      return
+    }
+    setError(null)
+    startTransition(async () => {
+      const result = await createCategoryQuick({ name: name.trim(), sku_prefix: skuPrefix, face_region: faceRegion || null })
+      if (result.error) {
+        setError(result.error)
+        return
+      }
+      if (result.category) onCreated(result.category)
+    })
+  }
+
+  return (
+    <div className="mt-2 bg-card border border-rim rounded-lg p-3 space-y-2">
+      <div>
+        <label className="block text-xs font-body font-medium text-fg-2 mb-1">Nombre</label>
+        <input
+          className={field}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          disabled={isPending}
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <label className="block text-xs font-body font-medium text-fg-2 mb-1">Prefijo SKU</label>
+          <input
+            className={`${field} uppercase`}
+            maxLength={3}
+            value={skuPrefix}
+            onChange={(e) => setSkuPrefix(e.target.value.toUpperCase())}
+            disabled={isPending}
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-body font-medium text-fg-2 mb-1">Zona del rostro</label>
+          <select
+            className={field}
+            value={faceRegion}
+            onChange={(e) => setFaceRegion(e.target.value)}
+            disabled={isPending}
+          >
+            <option value="">Sin zona</option>
+            {FACE_REGIONS.map((r) => (
+              <option key={r.id} value={r.id}>{r.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      {error && <p className="text-xs font-body text-error">{error}</p>}
+      <div className="flex items-center gap-2 pt-1">
+        <button
+          type="button"
+          onClick={handleCreate}
+          disabled={isPending}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-noir text-beige text-xs font-body font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+        >
+          {isPending && <Loader2 size={12} className="animate-spin" />}
+          Crear y continuar
+        </button>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          disabled={isPending}
+          className="px-3 py-1.5 text-xs font-body text-fg-2 hover:text-fg transition-colors"
+        >
+          Cancelar
+        </button>
+      </div>
+      <p className="text-[11px] font-body text-fg-3 pt-1">
+        Los campos de comparación específicos de esta categoría (más allá de los universales) los agrega después quien programa el sitio.
+      </p>
+    </div>
+  )
+}
+
 // ─── Aviso de hojas sin categoría ──────────────────────────────────────────────
 
-function UnmatchedSheetsWarning({ sheets }: { sheets: string[] }) {
+function UnmatchedSheetsWarning({
+  sheets,
+  onCategoryCreated,
+}: {
+  sheets: string[]
+  onCategoryCreated: (category: Category) => void
+}) {
   return (
     <div className="bg-warning/10 border border-warning/30 rounded-xl p-4 mt-4">
       <p className="font-body text-sm font-medium text-warning mb-1.5">
         {sheets.length === 1 ? 'Esta hoja no coincide' : 'Estas hojas no coinciden'} con ninguna categoría — sus filas no se importaron
       </p>
-      <p className="font-body text-xs text-fg-2 mb-2">
-        {sheets.map((s) => `"${s}"`).join(', ')}
+      <p className="font-body text-xs text-fg-3 mb-2">
+        Si fue un error de escritura, corrige el nombre de la hoja en el Excel y vuelve a subirlo. Si es una categoría nueva, créala aquí mismo:
       </p>
-      <p className="font-body text-xs text-fg-3">
-        Si es una categoría nueva, créala primero en{' '}
-        <a href="/admin/categorias/nueva" target="_blank" className="text-accent hover:underline underline-offset-2">
-          Categorías
-        </a>{' '}
-        con ese nombre exacto y vuelve a subir el archivo. Si fue un error de escritura, corrige el nombre de la hoja en el Excel.
-      </p>
+      <div className="divide-y divide-rim">
+        {sheets.map((s) => (
+          <div key={s} className="py-2 first:pt-0 last:pb-0">
+            <p className="font-body text-xs font-medium text-fg">&quot;{s}&quot;</p>
+            <QuickCreateCategory sheetName={s} onCreated={onCategoryCreated} />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -85,31 +213,25 @@ function ProductPreviewCard({ p }: { p: ImportProduct }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function Step1Upload({ categories }: { categories: Category[] }) {
+export function Step1Upload({ categories: initialCategories }: { categories: Category[] }) {
   const { setProducts } = useProductImportStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [categories, setCategories] = useState<Category[]>(initialCategories)
   const [isDragging, setIsDragging] = useState(false)
   const [parsing, setParsing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [validationErrors, setValidationErrors] = useState<ImportValidationError[]>([])
   const [unmatchedSheets, setUnmatchedSheets] = useState<string[]>([])
   const [preview, setPreview] = useState<ImportProduct[]>([])
+  const [sheets, setSheets] = useState<Sheets | null>(null)
 
-  const parseFile = useCallback(async (file: File) => {
+  const runParse = useCallback(async (sheetsData: Sheets, cats: Category[]) => {
     setParsing(true)
     setError(null)
     setValidationErrors([])
-    setUnmatchedSheets([])
     setPreview([])
 
-    const { sheets, error: readError } = await readWorkbookSheets(file)
-    if (readError) {
-      setError(readError)
-      setParsing(false)
-      return
-    }
-
-    const { groups, errors, unmatchedSheets: unmatched } = parseWorkbook(sheets, categories)
+    const { groups, errors, unmatchedSheets: unmatched } = parseWorkbook(sheetsData, cats)
     setUnmatchedSheets(unmatched)
 
     if (errors.length > 0) {
@@ -131,7 +253,7 @@ export function Step1Upload({ categories }: { categories: Category[] }) {
     const existingSkus = new Set(await getExistingSkus())
 
     const products: ImportProduct[] = groups.map((g, i) => {
-      const category = categories.find((c) => c.id === g.categoryId)!
+      const category = cats.find((c) => c.id === g.categoryId)!
       let sku = g.sku
       let isExisting = false
       if (sku) {
@@ -170,7 +292,32 @@ export function Step1Upload({ categories }: { categories: Category[] }) {
 
     setPreview(products)
     setParsing(false)
-  }, [categories])
+  }, [])
+
+  const parseFile = useCallback(async (file: File) => {
+    setParsing(true)
+    setError(null)
+    setValidationErrors([])
+    setUnmatchedSheets([])
+    setPreview([])
+    setSheets(null)
+
+    const { sheets: sheetsData, error: readError } = await readWorkbookSheets(file)
+    if (readError) {
+      setError(readError)
+      setParsing(false)
+      return
+    }
+
+    setSheets(sheetsData)
+    await runParse(sheetsData, categories)
+  }, [categories, runParse])
+
+  const handleCategoryCreated = useCallback((category: Category) => {
+    const nextCategories = [...categories, category]
+    setCategories(nextCategories)
+    if (sheets) runParse(sheets, nextCategories)
+  }, [categories, sheets, runParse])
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
@@ -184,6 +331,7 @@ export function Step1Upload({ categories }: { categories: Category[] }) {
     setError(null)
     setValidationErrors([])
     setUnmatchedSheets([])
+    setSheets(null)
   }
 
   const handleContinue = () => {
@@ -207,7 +355,7 @@ export function Step1Upload({ categories }: { categories: Category[] }) {
           </button>
         </div>
 
-        {unmatchedSheets.length > 0 && <UnmatchedSheetsWarning sheets={unmatchedSheets} />}
+        {unmatchedSheets.length > 0 && <UnmatchedSheetsWarning sheets={unmatchedSheets} onCategoryCreated={handleCategoryCreated} />}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1 mb-6 mt-4">
           {preview.map((p) => (
@@ -285,7 +433,7 @@ export function Step1Upload({ categories }: { categories: Category[] }) {
       )}
 
       {validationErrors.length > 0 && <ValidationErrorsPanel errors={validationErrors} />}
-      {unmatchedSheets.length > 0 && <UnmatchedSheetsWarning sheets={unmatchedSheets} />}
+      {unmatchedSheets.length > 0 && <UnmatchedSheetsWarning sheets={unmatchedSheets} onCategoryCreated={handleCategoryCreated} />}
     </div>
   )
 }
