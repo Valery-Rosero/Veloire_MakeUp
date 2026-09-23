@@ -8,6 +8,31 @@ import { logAdminAction } from '@/lib/audit-log'
 import { getFieldsForCategory, validateComparisonValue } from '@/lib/comparison-fields'
 import { nextSkuForBrandCategory } from '@/lib/sku'
 
+// Gris neutro usado como color de respaldo cuando un producto "no tiene
+// variación de color" — no es una elección real del admin, así que no debe
+// aparecer en la lista de colores reutilizables.
+const NEUTRAL_PLACEHOLDER_COLOR = '#C8C8C8'
+
+// Colores más usados entre todos los tonos existentes, para elegir con un clic
+// en vez de escribir el hex a mano cada vez (los más repetidos primero).
+export async function getRecentShadeColors(): Promise<string[]> {
+  await requireAdmin()
+  const supabase = await createAdminClient()
+  const { data } = await supabase
+    .from('product_shades')
+    .select('hex_color')
+    .order('created_at', { ascending: false })
+    .limit(500)
+
+  const counts = new Map<string, number>()
+  for (const row of (data as Array<{ hex_color: string }> | null) ?? []) {
+    const hex = row.hex_color?.toUpperCase()
+    if (!hex || hex === NEUTRAL_PLACEHOLDER_COLOR) continue
+    counts.set(hex, (counts.get(hex) ?? 0) + 1)
+  }
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([hex]) => hex).slice(0, 24)
+}
+
 interface ShadeInput {
   id?: string
   name: string

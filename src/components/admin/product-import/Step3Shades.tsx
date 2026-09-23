@@ -1,8 +1,11 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useProductImportStore, type ImportProduct } from '@/lib/store/product-import'
 import { ImageUploader } from '@/components/admin/ImageUploader'
+import { RecentColorSwatches } from '@/components/admin/RecentColorSwatches'
+import { getRecentShadeColors } from '@/app/admin/productos/actions'
 
 // ─── Single shade row ─────────────────────────────────────────────────────────
 
@@ -10,10 +13,12 @@ function ShadeRow({
   shade,
   productId,
   noColor,
+  recentColors,
 }: {
   shade: { id: string; excelRef: string; name: string; hexColor: string; imageUrl: string; stock: number }
   productId: string
   noColor: boolean
+  recentColors: string[]
 }) {
   const { updateShade } = useProductImportStore()
 
@@ -83,6 +88,13 @@ function ShadeRow({
               className="flex-1 px-3 py-2 rounded-lg border border-rim bg-card font-body text-sm font-mono text-fg focus:outline-none focus:ring-2 focus:ring-accent/30"
             />
           </div>
+          <div className="mt-2">
+            <RecentColorSwatches
+              colors={recentColors}
+              current={shade.hexColor}
+              onPick={(hex) => updateShade(productId, shade.id, { hexColor: hex })}
+            />
+          </div>
         </div>
       )}
 
@@ -105,7 +117,7 @@ function ShadeRow({
 
 // ─── Product shades form ──────────────────────────────────────────────────────
 
-function ProductShadesForm({ product }: { product: ImportProduct }) {
+function ProductShadesForm({ product, recentColors }: { product: ImportProduct; recentColors: string[] }) {
   const { updateProduct, updateShade } = useProductImportStore()
 
   const toggleNoColor = (val: boolean) => {
@@ -160,6 +172,7 @@ function ProductShadesForm({ product }: { product: ImportProduct }) {
               shade={shade}
               productId={product.id}
               noColor={product.noColorVariation}
+              recentColors={recentColors}
             />
           ))}
           {product.shades.length === 0 && (
@@ -177,6 +190,11 @@ function ProductShadesForm({ product }: { product: ImportProduct }) {
 
 export function Step3Shades() {
   const { products, productIdx, setProductIdx, setStep } = useProductImportStore()
+  const [recentColors, setRecentColors] = useState<string[]>([])
+
+  useEffect(() => {
+    getRecentShadeColors().then(setRecentColors)
+  }, [])
 
   const current = products[productIdx]
   const total = products.length
@@ -213,7 +231,7 @@ export function Step3Shades() {
         </div>
       )}
 
-      <ProductShadesForm product={current} />
+      <ProductShadesForm product={current} recentColors={recentColors} />
 
       {/* Navigation */}
       <div className="flex items-center justify-between mt-6 pt-4 border-t border-rim">
