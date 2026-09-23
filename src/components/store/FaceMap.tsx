@@ -170,7 +170,7 @@ export function FaceMap({ categories }: Props) {
           fill
           sizes="300px"
           priority
-          className="object-contain dark:invert pointer-events-none"
+          className="object-contain dark:invert dark:brightness-110 dark:contrast-125 dark:drop-shadow-[0_0_14px_rgba(255,255,255,0.3)] pointer-events-none"
           draggable={false}
         />
 
