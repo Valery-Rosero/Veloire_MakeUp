@@ -55,7 +55,7 @@ function Logo({ size = 'md', onClick }: { size?: 'sm' | 'md' | 'lg'; onClick?: (
   return (
     <Link href="/" onClick={onClick} className="flex flex-col items-start leading-none group">
       <span
-        className="font-display italic text-fg leading-none uppercase tracking-wide group-hover:opacity-80 transition-opacity duration-200"
+        className="font-display text-fg leading-none uppercase tracking-wide group-hover:opacity-80 transition-opacity duration-200"
         style={{ fontSize: sizes[size], letterSpacing: '1px' }}
       >
         Vèloire
