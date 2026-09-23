@@ -178,7 +178,7 @@ Acceso: `role === 'admin'` en `profiles`. Verificado en el proxy y en el layout.
   - Estado (`draft`, `active`, `inactive`) y destacado
   - Meta title y meta description
   - `ImageUploader`: subir múltiples imágenes a Supabase Storage, reordenar, marcar principal
-  - `ShadeForm`: gestionar tonos (nombre, color hex, stock, imagen, activo)
+  - **Tonos disponibles** (`ShadeSwatch`): cada tono es un círculo de color en una grilla compacta, sin formulario aparte para agregarlo o editarlo — nombre y stock se editan escribiendo directo bajo el círculo; clic en el círculo abre un popover chiquito con el selector de color + la tira de "colores usados antes" (`RecentColorSwatches`); un ícono de cámara abre un popover con `ImageUploader` para la foto del tono; un ícono de ojo activa/desactiva el tono sin borrarlo. Validación (nombre y hex completos) se revisa al guardar el producto, no en cada tono por separado
 
 ### Importar productos (`/admin/productos/importar`)
 

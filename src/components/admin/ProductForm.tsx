@@ -2,11 +2,11 @@
 
 import { useState, useTransition, useEffect, useRef } from 'react'
 import Image from 'next/image'
-import { AnimatePresence, motion } from 'framer-motion'
-import { Plus, Pencil, Trash2, Loader2, Check } from 'lucide-react'
-import { saveProduct, previewNextSku, type SaveProductInput } from '@/app/admin/productos/actions'
+import { Plus, Loader2 } from 'lucide-react'
+import { saveProduct, previewNextSku, getRecentShadeColors, type SaveProductInput } from '@/app/admin/productos/actions'
 import { Input } from '@/components/ui/Input'
 import { ImageUploader } from './ImageUploader'
+import { ShadeSwatch } from './ShadeSwatch'
 import { slugify } from '@/lib/format'
 import { getFieldsForCategory } from '@/lib/comparison-fields'
 import { ComparisonFieldInput } from './ComparisonFieldInput'
@@ -58,11 +58,6 @@ interface Props {
   initialData?: InitialData
 }
 
-type ShadeFormState =
-  | null
-  | { mode: 'add'; data: ShadeRow }
-  | { mode: 'edit'; index: number; data: ShadeRow }
-
 function freshShade(sortOrder: number): ShadeRow {
   return { name: '', hex_color: '#D4537E', stock: 0, image_url: '', is_active: true, sort_order: sortOrder }
 }
@@ -112,7 +107,12 @@ export function ProductForm({ categories, initialData }: Props) {
   // Shades
   const [shades, setShades] = useState<ShadeRow[]>(initialData?.shades ?? [])
   const [removedShadeIds, setRemovedShadeIds] = useState<string[]>([])
-  const [shadeForm, setShadeForm] = useState<ShadeFormState>(null)
+  const [openPopover, setOpenPopover] = useState<{ index: number; kind: 'color' | 'photo' } | null>(null)
+  const [recentColors, setRecentColors] = useState<string[]>([])
+
+  useEffect(() => {
+    getRecentShadeColors().then(setRecentColors)
+  }, [])
 
   function handleNameChange(value: string) {
     setName(value)
@@ -151,44 +151,23 @@ export function ProductForm({ categories, initialData }: Props) {
   const galleryImages = images.filter((img) => !img.is_main)
 
   // ── Shades ───────────────────────────────────────────────────────────────
-  function openAddShade() {
-    setShadeForm({ mode: 'add', data: freshShade(shades.length) })
-  }
-
-  function openEditShade(index: number) {
-    setShadeForm({ mode: 'edit', index, data: { ...shades[index] } })
-  }
-
-  function cancelShadeForm() {
-    setShadeForm(null)
-  }
-
-  function saveShade() {
-    if (!shadeForm) return
-    const { data } = shadeForm
-    if (!data.name.trim()) return
-    if (!/^#[0-9A-Fa-f]{6}$/.test(data.hex_color)) return
-
-    if (shadeForm.mode === 'add') {
-      setShades((prev) => [...prev, { ...data, sort_order: prev.length }])
-    } else {
-      setShades((prev) => prev.map((s, i) => (i === shadeForm.index ? data : s)))
-    }
-    setShadeForm(null)
+  function addShade() {
+    setShades((prev) => [...prev, freshShade(prev.length)])
   }
 
   function removeShade(index: number) {
     const shade = shades[index]
     if (shade.id) setRemovedShadeIds((prev) => [...prev, shade.id!])
     setShades((prev) => prev.filter((_, i) => i !== index))
-    if (shadeForm && shadeForm.mode === 'edit' && shadeForm.index === index) {
-      setShadeForm(null)
-    }
+    setOpenPopover((prev) => (prev?.index === index ? null : prev))
   }
 
-  function updateShadeField<K extends keyof ShadeRow>(field: K, value: ShadeRow[K]) {
-    if (!shadeForm) return
-    setShadeForm({ ...shadeForm, data: { ...shadeForm.data, [field]: value } })
+  function updateShadeAt(index: number, patch: Partial<ShadeRow>) {
+    setShades((prev) => prev.map((s, i) => (i === index ? { ...s, ...patch } : s)))
+  }
+
+  function toggleShadePopover(index: number, kind: 'color' | 'photo') {
+    setOpenPopover((prev) => (prev?.index === index && prev.kind === kind ? null : { index, kind }))
   }
 
   // ── Ficha de comparación ─────────────────────────────────────────────────
@@ -218,6 +197,15 @@ export function ProductForm({ categories, initialData }: Props) {
     }
     if (targetStatus === 'active' && shades.length === 0) {
       setServerError('Debes añadir al menos un tono antes de activar el producto.')
+      return null
+    }
+    if (shades.some((s) => !s.name.trim())) {
+      setServerError('Todos los tonos necesitan un nombre.')
+      return null
+    }
+    const invalidShade = shades.find((s) => !/^#[0-9A-Fa-f]{6}$/.test(s.hex_color))
+    if (invalidShade) {
+      setServerError(`El tono "${invalidShade.name || 'sin nombre'}" tiene un color inválido — usa el selector o un hex de 6 dígitos.`)
       return null
     }
     return {
@@ -457,158 +445,42 @@ export function ProductForm({ categories, initialData }: Props) {
               <span className="ml-2 text-xs text-fg-3 font-normal">{shades.length} tono{shades.length !== 1 ? 's' : ''}</span>
             )}
           </h2>
+        </div>
+
+        <p className="font-body text-xs text-fg-3 -mt-2">
+          Clic en un círculo para cambiar su color · nombre y stock se editan directo
+        </p>
+
+        <div className="flex flex-wrap gap-3">
+          {shades.map((shade, i) => (
+            <ShadeSwatch
+              key={i}
+              shade={shade}
+              openPopover={openPopover?.index === i ? openPopover.kind : null}
+              recentColors={recentColors}
+              onTogglePopover={(kind) => toggleShadePopover(i, kind)}
+              onClosePopover={() => setOpenPopover((prev) => (prev?.index === i ? null : prev))}
+              onUpdate={(patch) => updateShadeAt(i, patch)}
+              onRemove={() => removeShade(i)}
+            />
+          ))}
+
           <button
             type="button"
-            onClick={openAddShade}
-            disabled={isPending || shadeForm?.mode === 'add'}
-            className="flex items-center gap-1 text-xs font-body text-accent hover:opacity-80 transition-opacity disabled:opacity-50"
+            onClick={addShade}
+            disabled={isPending}
+            title="Añadir tono"
+            className="w-11 h-11 rounded-full border-2 border-dashed border-rim flex items-center justify-center text-fg-3 hover:border-accent hover:text-accent transition-colors disabled:opacity-50"
           >
-            <Plus size={13} />
-            Añadir tono
+            <Plus size={18} />
           </button>
         </div>
 
-        {/* Shade list */}
-        {shades.length > 0 && (
-          <div className="space-y-1">
-            {shades.map((shade, i) => (
-              <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-xl bg-alt">
-                <div
-                  className="w-6 h-6 rounded-full border border-rim shrink-0"
-                  style={{ backgroundColor: shade.hex_color }}
-                />
-                <span className="font-body text-sm text-fg flex-1 truncate">{shade.name}</span>
-                <span className="font-body text-xs text-fg-3">{shade.stock} und.</span>
-                <button
-                  type="button"
-                  onClick={() => openEditShade(i)}
-                  className="text-fg-3 hover:text-accent transition-colors"
-                >
-                  <Pencil size={14} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => removeShade(i)}
-                  className="text-fg-3 hover:text-error transition-colors"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {shades.length === 0 && !shadeForm && (
+        {shades.length === 0 && (
           <p className="text-sm font-body text-fg-3 text-center py-2">
             Sin tonos aún. Añade al menos uno para publicar el producto.
           </p>
         )}
-
-        {/* Animated shade form */}
-        <AnimatePresence>
-          {shadeForm && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              style={{ overflow: 'hidden' }}
-            >
-              <div className="border border-rim rounded-xl p-4 space-y-3 bg-highlight mt-2">
-                <p className="font-body text-xs font-medium text-fg-2 uppercase tracking-wide">
-                  {shadeForm.mode === 'add' ? 'Nuevo tono' : 'Editar tono'}
-                </p>
-
-                <div>
-                  <label className={lbl}>Nombre del tono *</label>
-                  <input
-                    className={field}
-                    type="text"
-                    placeholder="Ej: Rojo Pasión"
-                    value={shadeForm.data.name}
-                    onChange={(e) => updateShadeField('name', e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <label className={lbl}>Color</label>
-                  <div className="flex gap-2 items-center">
-                    <input
-                      type="color"
-                      value={shadeForm.data.hex_color}
-                      onChange={(e) => updateShadeField('hex_color', e.target.value)}
-                      className="w-10 h-9 rounded-lg border border-rim cursor-pointer bg-card"
-                    />
-                    <input
-                      className={`${field} flex-1 font-mono`}
-                      type="text"
-                      placeholder="#D4537E"
-                      value={shadeForm.data.hex_color}
-                      onChange={(e) => updateShadeField('hex_color', e.target.value)}
-                    />
-                    <div
-                      className="w-9 h-9 rounded-full border border-rim shrink-0"
-                      style={{ backgroundColor: shadeForm.data.hex_color }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className={lbl}>Foto del tono</label>
-                  <ImageUploader
-                    value={shadeForm.data.image_url}
-                    onChange={(url) => updateShadeField('image_url', url)}
-                    hint="Si no subes foto, se usará la imagen principal del producto."
-                    size="sm"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={lbl}>Stock</label>
-                    <input
-                      className={field}
-                      type="number"
-                      min={0}
-                      value={shadeForm.data.stock}
-                      onChange={(e) => updateShadeField('stock', parseInt(e.target.value, 10) || 0)}
-                    />
-                  </div>
-                  <div className="flex items-end pb-0.5">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={shadeForm.data.is_active}
-                        onChange={(e) => updateShadeField('is_active', e.target.checked)}
-                        className="w-4 h-4 rounded border-rim accent-accent"
-                      />
-                      <span className="font-body text-sm text-fg">Activo</span>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="flex gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={saveShade}
-                    disabled={!shadeForm.data.name.trim()}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-noir text-beige text-sm font-body font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-                  >
-                    <Check size={14} />
-                    Guardar tono
-                  </button>
-                  <button
-                    type="button"
-                    onClick={cancelShadeForm}
-                    className="px-4 py-2 rounded-xl border border-rim text-sm font-body text-fg-2 hover:border-rim-2 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
       {/* ── 4. Ficha de comparación ────────────────────────────────────────── */}
