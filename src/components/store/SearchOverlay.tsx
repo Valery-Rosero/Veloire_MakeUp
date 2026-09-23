@@ -152,7 +152,7 @@ export function SearchOverlay({ open, onClose }: Props) {
                   value={query}
                   onChange={handleChange}
                   placeholder="Buscar productos, marcas, tonos…"
-                  className="w-full bg-transparent font-body text-[16px] text-fg placeholder:text-fg-3 outline-none py-4"
+                  className="w-full bg-transparent font-body text-[16px] text-fg placeholder:text-fg-2 outline-none py-4"
                 />
               </form>
               {loading ? (

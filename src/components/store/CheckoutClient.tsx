@@ -279,7 +279,7 @@ export function CheckoutClient({ deliveryFee, prefilledData, hasSession }: Check
                 onChange={(e) => handleChange('notes', e.target.value)}
                 onBlur={() => handleBlur('notes')}
                 rows={3}
-                className="w-full rounded-lg border border-rim px-3 py-2 text-sm bg-card text-fg outline-none transition-colors duration-150 placeholder:text-fg-3 focus:border-accent focus:ring-2 focus:ring-accent/20 resize-none"
+                className="w-full rounded-lg border border-rim px-3 py-2 text-sm bg-card text-fg outline-none transition-colors duration-150 placeholder:text-fg-2 focus:border-accent focus:ring-2 focus:ring-accent/20 resize-none"
               />
               <div className="flex justify-between">
                 {errors.notes && touched.has('notes') ? (

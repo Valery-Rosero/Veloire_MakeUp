@@ -253,7 +253,7 @@ export function ProductForm({ categories, initialData }: Props) {
 
   // ── Styles ────────────────────────────────────────────────────────────────
   const field =
-    'w-full rounded-lg border border-rim px-3 py-2 text-sm bg-card text-fg outline-none transition-colors hover:border-rim-2 focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-50 font-body placeholder:text-fg-3'
+    'w-full rounded-lg border border-rim px-3 py-2 text-sm bg-card text-fg outline-none transition-colors hover:border-rim-2 focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-50 font-body placeholder:text-fg-2'
   const lbl = 'block text-sm font-body font-medium text-fg-2 mb-1'
   const section = 'bg-card border border-rim rounded-2xl p-5 space-y-4'
 

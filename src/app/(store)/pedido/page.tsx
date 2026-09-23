@@ -57,7 +57,7 @@ export default async function PedidoSearchPage({ searchParams }: PageProps) {
             defaultValue={numero ?? ''}
             placeholder="VEL-20250610-00042"
             autoComplete="off"
-            className="w-full rounded-lg border border-rim px-3 py-2 text-sm bg-card text-fg outline-none transition-colors duration-150 placeholder:text-fg-3 focus:border-accent focus:ring-2 focus:ring-accent/20"
+            className="w-full rounded-lg border border-rim px-3 py-2 text-sm bg-card text-fg outline-none transition-colors duration-150 placeholder:text-fg-2 focus:border-accent focus:ring-2 focus:ring-accent/20"
           />
         </div>
 
@@ -72,7 +72,7 @@ export default async function PedidoSearchPage({ searchParams }: PageProps) {
             defaultValue={correo ?? ''}
             placeholder="tucorreo@ejemplo.com"
             autoComplete="email"
-            className="w-full rounded-lg border border-rim px-3 py-2 text-sm bg-card text-fg outline-none transition-colors duration-150 placeholder:text-fg-3 focus:border-accent focus:ring-2 focus:ring-accent/20"
+            className="w-full rounded-lg border border-rim px-3 py-2 text-sm bg-card text-fg outline-none transition-colors duration-150 placeholder:text-fg-2 focus:border-accent focus:ring-2 focus:ring-accent/20"
           />
         </div>
 

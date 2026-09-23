@@ -29,7 +29,7 @@ const PAYMENT_OPTIONS = [
 ]
 
 const inputCls =
-  'w-full border border-rim rounded-lg px-3 py-2 text-sm font-body bg-page text-fg focus:outline-none focus:border-rim-2 transition-colors placeholder:text-fg-3'
+  'w-full border border-rim rounded-lg px-3 py-2 text-sm font-body bg-page text-fg focus:outline-none focus:border-rim-2 transition-colors placeholder:text-fg-2'
 
 export function CreateOrderForm({
   products,

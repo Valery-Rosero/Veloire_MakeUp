@@ -27,7 +27,7 @@ export function OrdersSearch({ defaultValue }: { defaultValue: string }) {
         value={value}
         onChange={(e) => handleChange(e.target.value)}
         placeholder="Buscar por orden o cliente..."
-        className="w-full rounded-lg border border-rim bg-card text-fg text-sm font-body pl-8 pr-3 py-1.5 outline-none transition-colors placeholder:text-fg-3 hover:border-rim-2 focus:border-accent focus:ring-2 focus:ring-accent/20"
+        className="w-full rounded-lg border border-rim bg-card text-fg text-sm font-body pl-8 pr-3 py-1.5 outline-none transition-colors placeholder:text-fg-2 hover:border-rim-2 focus:border-accent focus:ring-2 focus:ring-accent/20"
       />
     </div>
   )
