@@ -40,7 +40,7 @@ export function AdminSidebar({ userEmail, userName, userRole, onClose }: Props) 
   }
 
   return (
-    <aside className="w-64 bg-card border-r border-rim flex flex-col min-h-screen">
+    <aside className="w-64 bg-card border-r border-rim flex flex-col h-screen sticky top-0 overflow-y-auto">
 
       {/* Logo */}
       <div className="px-6 py-6 border-b border-rim">

@@ -545,7 +545,7 @@ export function ProductForm({ categories, initialData }: Props) {
       )}
 
       {/* ── Sticky footer buttons ──────────────────────────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 lg:left-60 z-30 bg-card border-t border-rim px-6 py-4 flex gap-3">
+      <div className="fixed bottom-0 left-0 right-0 lg:left-64 z-30 bg-card border-t border-rim px-6 py-4 flex gap-3">
         <button
           type="button"
           onClick={() => handleSave('draft')}
