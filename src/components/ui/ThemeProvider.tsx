@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useSyncExternalStore } from 'react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -25,54 +25,66 @@ export function useTheme() {
   return useContext(ThemeCtx)
 }
 
-// ─── Helper ───────────────────────────────────────────────────────────────────
+// ─── Store externo (localStorage + preferencia del sistema) ───────────────────
 
-function getSystemTheme(): ResolvedTheme {
-  if (typeof window === 'undefined') return 'light'
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+const STORAGE_KEY = 'theme'
+const DARK_QUERY = '(prefers-color-scheme: dark)'
+
+function readStoredTheme(): Theme {
+  const stored = localStorage.getItem(STORAGE_KEY)
+  return stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system'
+}
+
+function resolveTheme(theme: Theme): ResolvedTheme {
+  if (theme !== 'system') return theme
+  return window.matchMedia(DARK_QUERY).matches ? 'dark' : 'light'
 }
 
 function applyTheme(resolved: ResolvedTheme) {
   document.documentElement.classList.toggle('dark', resolved === 'dark')
 }
 
+// localStorage no emite eventos para cambios hechos en la misma pestaña, así
+// que setTheme() avisa a mano a los suscriptores de useSyncExternalStore.
+const listeners = new Set<() => void>()
+
+function subscribe(callback: () => void) {
+  listeners.add(callback)
+  const mq = window.matchMedia(DARK_QUERY)
+  mq.addEventListener('change', callback)
+  return () => {
+    listeners.delete(callback)
+    mq.removeEventListener('change', callback)
+  }
+}
+
+const getTheme = () => readStoredTheme()
+const getResolvedTheme = () => resolveTheme(readStoredTheme())
+const getServerTheme = (): Theme => 'system'
+const getServerResolvedTheme = (): ResolvedTheme => 'light'
+
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('system')
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>('light')
+  const theme = useSyncExternalStore(subscribe, getTheme, getServerTheme)
+  const resolvedTheme = useSyncExternalStore(subscribe, getResolvedTheme, getServerResolvedTheme)
 
-  // Hydrate from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem('theme') as Theme | null
-    const initial: Theme =
-      stored && ['light', 'dark', 'system'].includes(stored) ? stored : 'system'
-    const resolved = initial === 'system' ? getSystemTheme() : initial
-    setThemeState(initial)
-    setResolvedTheme(resolved)
-    applyTheme(resolved)
-  }, [])
-
-  // Track system preference when theme is 'system'
+  // La clase inicial de <html> la pone el script inline de layout.tsx antes de
+  // hidratar (sin parpadeo); acá solo se sigue la preferencia del sistema
+  // mientras el tema elegido sea 'system'.
   useEffect(() => {
     if (theme !== 'system') return
-    const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    const handler = () => {
-      const resolved: ResolvedTheme = mq.matches ? 'dark' : 'light'
-      setResolvedTheme(resolved)
-      applyTheme(resolved)
-    }
+    const mq = window.matchMedia(DARK_QUERY)
+    const handler = () => applyTheme(mq.matches ? 'dark' : 'light')
     mq.addEventListener('change', handler)
     return () => mq.removeEventListener('change', handler)
   }, [theme])
 
-  const setTheme = (t: Theme) => {
-    const resolved = t === 'system' ? getSystemTheme() : t
-    setThemeState(t)
-    setResolvedTheme(resolved)
-    applyTheme(resolved)
-    localStorage.setItem('theme', t)
-  }
+  const setTheme = useCallback((t: Theme) => {
+    localStorage.setItem(STORAGE_KEY, t)
+    applyTheme(resolveTheme(t))
+    listeners.forEach((notify) => notify())
+  }, [])
 
   return (
     <ThemeCtx.Provider value={{ theme, resolvedTheme, setTheme }}>

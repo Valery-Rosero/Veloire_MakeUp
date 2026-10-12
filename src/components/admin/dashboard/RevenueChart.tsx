@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from 'recharts'
 import { useTheme } from '@/components/ui/ThemeProvider'
+import { useHasMounted } from '@/hooks/useHasMounted'
 
 export interface DayRevenue { date: string; value: number }
 
@@ -29,9 +29,8 @@ function CustomTooltip({ active, payload, label }: {
 }
 
 export function RevenueChart({ data }: { data: DayRevenue[] }) {
-  const [mounted, setMounted] = useState(false)
+  const mounted = useHasMounted()
   const { resolvedTheme } = useTheme()
-  useEffect(() => setMounted(true), [])
 
   const accent = resolvedTheme === 'dark' ? '#c08fa2' : '#a56583'
   const grid   = resolvedTheme === 'dark' ? '#3d2a2a' : '#e8d0c0'

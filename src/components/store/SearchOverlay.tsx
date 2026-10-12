@@ -45,21 +45,29 @@ export function SearchOverlay({ open, onClose }: Props) {
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
+  const [prevOpen, setPrevOpen] = useState(open)
   const inputRef = useRef<HTMLInputElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const router = useRouter()
 
-  // Focus + reset on open/close
-  useEffect(() => {
-    if (open) {
-      const t = setTimeout(() => inputRef.current?.focus(), 80)
-      return () => clearTimeout(t)
-    } else {
+  // Resetear el estado de búsqueda al cerrar — ajuste durante el render (patrón
+  // recomendado por React para reaccionar a un cambio de prop) en vez de un
+  // setState síncrono dentro de un efecto.
+  if (open !== prevOpen) {
+    setPrevOpen(open)
+    if (!open) {
       setQuery('')
       setResults([])
       setSearched(false)
       setLoading(false)
     }
+  }
+
+  // Focus al abrir
+  useEffect(() => {
+    if (!open) return
+    const t = setTimeout(() => inputRef.current?.focus(), 80)
+    return () => clearTimeout(t)
   }, [open])
 
   // Escape key

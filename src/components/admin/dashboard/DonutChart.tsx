@@ -18,16 +18,22 @@ export function DonutChart({
 }) {
   const total = segments.reduce((s, x) => s + x.value, 0)
 
-  let angle = 0
+  // Ángulos acumulados sin mutar una variable externa al loop (el React
+  // Compiler no permite reasignar algo fuera del callback durante el render).
   const stops = segments
     .filter(s => s.value > 0)
-    .map(seg => {
-      const pct = (seg.value / Math.max(total, 1)) * 360
-      const stop = `${seg.color} ${angle.toFixed(1)}deg ${(angle + pct).toFixed(1)}deg`
-      angle += pct
-      return stop
-    })
-    .join(', ')
+    .reduce<{ parts: string[]; angle: number }>(
+      (acc, seg) => {
+        const pct = (seg.value / Math.max(total, 1)) * 360
+        const end = acc.angle + pct
+        return {
+          parts: [...acc.parts, `${seg.color} ${acc.angle.toFixed(1)}deg ${end.toFixed(1)}deg`],
+          angle: end,
+        }
+      },
+      { parts: [], angle: 0 }
+    )
+    .parts.join(', ')
 
   const gradient = stops.length
     ? `conic-gradient(${stops})`
