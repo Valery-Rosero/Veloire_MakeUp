@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { unstable_cache } from 'next/cache'
+import { createClient, createPublicClient } from '@/lib/supabase/server'
 import { CatalogoFilters } from '@/components/store/CatalogoFilters'
 import { ProductGrid } from '@/components/store/ProductGrid'
 import { CatalogoPagination } from '@/components/store/CatalogoPagination'
@@ -9,79 +10,94 @@ import type { Category, CatalogoProduct } from '@/types/catalog'
 
 const PAGE_SIZE = 20
 
+// Esta página lee searchParams, así que Next.js la renderiza dinámicamente
+// en cada request sin importar lo que se configure acá (no hay forma de
+// servirla 100% estática sin Partial Prerendering). Lo que sí se cachea con
+// unstable_cache son las consultas a Supabase en sí — mismo filtro = mismo
+// resultado reutilizado, sin volver a pegarle a la base cada vez.
+const CACHE_REVALIDATE_SECONDS = 60
+
 interface PageProps {
   searchParams: Promise<{ categoria?: string; orden?: string; pagina?: string; q?: string }>
 }
 
 // ─── Fetchers ─────────────────────────────────────────────────────────────────
 
-async function getCategories(): Promise<Category[]> {
-  try {
-    const supabase = await createClient()
-    const { data } = await supabase
-      .from('categories')
-      .select('id, name, slug, description')
-      .eq('is_active', true)
-      .order('sort_order')
-    return data ?? []
-  } catch {
-    return []
-  }
-}
-
-async function getProducts(
-  categoria?: string,
-  orden?: string,
-  page = 1,
-  q?: string,
-): Promise<{ products: CatalogoProduct[]; total: number }> {
-  try {
-    const supabase = await createClient()
-
-    let categoryId: string | null = null
-    if (categoria) {
-      const { data: catRows } = await supabase
+const getCategories = unstable_cache(
+  async (): Promise<Category[]> => {
+    try {
+      const supabase = createPublicClient()
+      const { data } = await supabase
         .from('categories')
-        .select('id')
-        .eq('slug', categoria)
-        .limit(1)
-      categoryId = (catRows as Array<{ id: string }> | null)?.[0]?.id ?? null
+        .select('id, name, slug, description')
+        .eq('is_active', true)
+        .order('sort_order')
+      return data ?? []
+    } catch {
+      return []
     }
+  },
+  ['catalogo-categories'],
+  { tags: ['categories'], revalidate: CACHE_REVALIDATE_SECONDS }
+)
 
-    const from = (page - 1) * PAGE_SIZE
-    const to = from + PAGE_SIZE - 1
+const getProducts = unstable_cache(
+  async (
+    categoria?: string,
+    orden?: string,
+    page = 1,
+    q?: string,
+  ): Promise<{ products: CatalogoProduct[]; total: number }> => {
+    try {
+      const supabase = createPublicClient()
 
-    let query = supabase
-      .from('products')
-      .select(
-        `id, slug, name, price, compare_price,
-        product_images(url, alt_text, is_main),
-        product_shades(id, is_active, stock),
-        categories(name, slug)`,
-        { count: 'exact' },
-      )
-      .eq('status', 'active')
-      .range(from, to)
+      let categoryId: string | null = null
+      if (categoria) {
+        const { data: catRows } = await supabase
+          .from('categories')
+          .select('id')
+          .eq('slug', categoria)
+          .limit(1)
+        categoryId = (catRows as Array<{ id: string }> | null)?.[0]?.id ?? null
+      }
 
-    if (categoryId) query = query.eq('category_id', categoryId)
+      const from = (page - 1) * PAGE_SIZE
+      const to = from + PAGE_SIZE - 1
 
-    if (q?.trim()) {
-      query = query.or(`name.ilike.%${q.trim()}%,brand.ilike.%${q.trim()}%,description.ilike.%${q.trim()}%`)
+      let query = supabase
+        .from('products')
+        .select(
+          `id, slug, name, price, compare_price,
+          product_images(url, alt_text, is_main),
+          product_shades(id, is_active, stock),
+          categories(name, slug)`,
+          { count: 'exact' },
+        )
+        .eq('status', 'active')
+        .range(from, to)
+
+      if (categoryId) query = query.eq('category_id', categoryId)
+
+      if (q?.trim()) {
+        query = query.or(`name.ilike.%${q.trim()}%,brand.ilike.%${q.trim()}%,description.ilike.%${q.trim()}%`)
+      }
+
+      switch (orden) {
+        case 'precio-asc':  query = query.order('price', { ascending: true });  break
+        case 'precio-desc': query = query.order('price', { ascending: false }); break
+        case 'nombre-az':   query = query.order('name',  { ascending: true });  break
+        default:            query = query.order('created_at', { ascending: false })
+      }
+
+      const { data, count } = await query
+      return { products: (data as unknown as CatalogoProduct[]) ?? [], total: count ?? 0 }
+    } catch {
+      return { products: [], total: 0 }
     }
-
-    switch (orden) {
-      case 'precio-asc':  query = query.order('price', { ascending: true });  break
-      case 'precio-desc': query = query.order('price', { ascending: false }); break
-      case 'nombre-az':   query = query.order('name',  { ascending: true });  break
-      default:            query = query.order('created_at', { ascending: false })
-    }
-
-    const { data, count } = await query
-    return { products: (data as unknown as CatalogoProduct[]) ?? [], total: count ?? 0 }
-  } catch {
-    return { products: [], total: 0 }
-  }
-}
+  },
+  ['catalogo-products'],
+  { tags: ['products'], revalidate: CACHE_REVALIDATE_SECONDS }
+)
 
 // ─── SEO ──────────────────────────────────────────────────────────────────────
 

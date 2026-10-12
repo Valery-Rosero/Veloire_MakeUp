@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth-guard'
 import { logAdminAction } from '@/lib/audit-log'
 import { slugify, uniqueSlug } from '@/lib/slug'
+import { revalidateCategories } from '@/lib/revalidate-storefront'
 
 export interface SaveCategoryInput {
   id?: string
@@ -56,7 +57,7 @@ export async function saveCategory(data: SaveCategoryInput): Promise<{ error?: s
   })
 
   revalidatePath('/admin/categorias')
-  revalidatePath('/')
+  revalidateCategories()
   redirect('/admin/categorias')
 }
 
@@ -119,7 +120,7 @@ export async function createCategoryQuick(data: {
   })
 
   revalidatePath('/admin/categorias')
-  revalidatePath('/')
+  revalidateCategories()
 
   return { category }
 }

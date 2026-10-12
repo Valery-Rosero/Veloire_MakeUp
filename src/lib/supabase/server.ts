@@ -23,6 +23,19 @@ export async function createClient() {
   )
 }
 
+// Cliente anónimo sin cookies — para lecturas públicas (catálogo, ficha de
+// producto) que se cachean con unstable_cache/generateStaticParams. Next.js
+// prohíbe leer cookies() dentro de una función cacheada o durante la
+// generación estática, así que estas lecturas (iguales para cualquier
+// visitante, no dependen de sesión) usan este cliente en vez de createClient().
+export function createPublicClient() {
+  return createSupabaseClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+}
+
 // Usa la SERVICE_ROLE_KEY — bypasea RLS.
 // Solo en API routes del servidor, nunca en componentes de cliente.
 //

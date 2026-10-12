@@ -6,6 +6,7 @@ import { requireAdmin } from '@/lib/auth-guard'
 import { logAdminAction } from '@/lib/audit-log'
 import { slugify, uniqueSlug } from '@/lib/slug'
 import type { ImportProduct } from '@/lib/store/product-import'
+import { revalidateCatalog } from '@/lib/revalidate-storefront'
 
 export interface ImportResult {
   nombre: string
@@ -189,5 +190,6 @@ export async function upsertProductsFromImport(
   }
 
   revalidatePath('/admin/productos')
+  revalidateCatalog()
   return { results }
 }

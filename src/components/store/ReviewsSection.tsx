@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { Trash2 } from 'lucide-react'
 import { StarRating } from './StarRating'
-import { submitReview, deleteReview } from '@/app/(store)/producto/[slug]/actions'
+import { submitReview, deleteReview, getReviewEligibility, type ReviewEligibility } from '@/app/(store)/producto/[slug]/actions'
 import { formatDate } from '@/lib/format'
 import type { Review } from '@/types/product'
 
@@ -11,17 +11,36 @@ interface Props {
   productSlug: string
   productId: string
   reviews: Review[]
-  isLoggedIn: boolean
-  canReview: boolean
-  existingReview: Review | null
 }
 
-export function ReviewsSection({ productSlug, productId, reviews, isLoggedIn, canReview, existingReview }: Props) {
+const EMPTY_ELIGIBILITY: ReviewEligibility = { isLoggedIn: false, canReview: false, existingReview: null }
+
+export function ReviewsSection({ productSlug, productId, reviews }: Props) {
   const [isPending, startTransition] = useTransition()
   const [showForm, setShowForm] = useState(false)
-  const [rating, setRating] = useState(existingReview?.rating ?? 0)
-  const [comment, setComment] = useState(existingReview?.comment ?? '')
   const [error, setError] = useState<string | null>(null)
+
+  // Depende de la sesión del visitante — se resuelve en el cliente, ya que
+  // la página de producto es estática (ISR) y no puede leer cookies en el
+  // render del servidor. Arranca "oculto" (sin permiso) y se activa solo si
+  // corresponde, así que no hay parpadeo de un botón que luego desaparece.
+  const [eligibility, setEligibility] = useState<ReviewEligibility>(EMPTY_ELIGIBILITY)
+  const { isLoggedIn, canReview, existingReview } = eligibility
+
+  useEffect(() => {
+    getReviewEligibility(productId).then(setEligibility)
+  }, [productId])
+
+  const [rating, setRating] = useState(0)
+  const [comment, setComment] = useState('')
+
+  function openForm() {
+    if (existingReview) {
+      setRating(existingReview.rating)
+      setComment(existingReview.comment ?? '')
+    }
+    setShowForm(true)
+  }
 
   const average = reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0
 
@@ -33,8 +52,12 @@ export function ReviewsSection({ productSlug, productId, reviews, isLoggedIn, ca
     setError(null)
     startTransition(async () => {
       const result = await submitReview(productSlug, productId, rating, comment)
-      if (result?.error) setError(result.error)
-      else setShowForm(false)
+      if (result?.error) {
+        setError(result.error)
+      } else {
+        setShowForm(false)
+        getReviewEligibility(productId).then(setEligibility)
+      }
     })
   }
 
@@ -45,6 +68,7 @@ export function ReviewsSection({ productSlug, productId, reviews, isLoggedIn, ca
       setRating(0)
       setComment('')
       setShowForm(false)
+      setEligibility((prev) => ({ ...prev, existingReview: null }))
     })
   }
 
@@ -67,7 +91,7 @@ export function ReviewsSection({ productSlug, productId, reviews, isLoggedIn, ca
 
       {canReview && !showForm && (
         <button
-          onClick={() => setShowForm(true)}
+          onClick={openForm}
           className="mb-6 px-5 py-2.5 rounded-xl border border-rim text-sm font-body font-medium text-fg-2 hover:bg-alt transition-colors"
         >
           {existingReview ? 'Editar tu reseña' : 'Escribir una reseña'}

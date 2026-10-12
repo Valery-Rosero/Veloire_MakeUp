@@ -6,6 +6,7 @@ import { requireAdmin } from '@/lib/auth-guard'
 import { logAdminAction } from '@/lib/audit-log'
 import type { OrderStatus } from '@/types/database'
 import { sendOrderCancelledEmail } from '@/lib/email/send-order-cancelled'
+import { revalidateCatalog } from '@/lib/revalidate-storefront'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -39,6 +40,8 @@ async function restoreOrderStock(orderId: string) {
         .eq('id', item.shade_id)
     })
   )
+
+  revalidateCatalog()
 }
 
 // ── Actions ───────────────────────────────────────────────────────────────────

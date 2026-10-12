@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { checkoutSchema } from '@/lib/validations/checkout'
 import { isRateLimited, getClientIp } from '@/lib/rate-limit'
 import type { CartItem } from '@/lib/store/cart'
+import { revalidateCatalog } from '@/lib/revalidate-storefront'
 
 interface OrderBody extends Record<string, unknown> {
   items: CartItem[]
@@ -149,6 +150,7 @@ export async function POST(request: NextRequest) {
       })
     )
 
+    revalidateCatalog()
     return NextResponse.json({ orderNumber }, { status: 201 })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error interno'

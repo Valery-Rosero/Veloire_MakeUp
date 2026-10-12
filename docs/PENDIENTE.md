@@ -100,9 +100,19 @@ El FAB de WhatsApp abre un chat pre-escrito. No hay integración con la API de W
 
 No hay integración de analytics (Google Analytics, Plausible, Fathom). No se puede medir tráfico, conversiones ni abandono de carrito.
 
-### ISR / SSG para el catálogo
+### ~~ISR / SSG para el catálogo~~ ✅ Completado
 
-Actualmente `/catalogo` y `/producto/[slug]` son completamente dinámicos (SSR en cada request). Se podrían usar con ISR (`revalidate`) para mejorar el tiempo de carga y reducir queries a Supabase.
+`/producto/[slug]` ahora es **100% estático con ISR**: `generateStaticParams()` pre-genera una página por cada producto activo en el build, y `export const revalidate = 60` las refresca en segundo plano cada minuto. Confirmado con `next build` — el resumen de rutas marca `● /producto/[slug]` (SSG), antes era `ƒ` (dinámico).
+
+`/catalogo` **sigue siendo dinámico** (`ƒ` en el build) y no hay forma de evitarlo sin Partial Prerendering: lee `searchParams` (`?categoria=`, `?orden=`, `?q=`, `?pagina=`) para filtrar server-side, y leer `searchParams` es justamente lo que Next.js considera una API de "tiempo de request" que fuerza el render dinámico de toda la ruta. Lo que sí se logró ahí: las consultas a Supabase (`getCategories`, `getProducts`) están envueltas en `unstable_cache` — mismo filtro = mismo resultado reutilizado por 60s, sin volver a pegarle a la base en cada visita idéntica. Es una optimización real (menos carga en Supabase, respuesta más rápida), pero no es "HTML estático servido desde CDN" como si fuera SSG puro — vale la pena que quede claro que no es lo mismo.
+
+Piezas nuevas:
+- `src/lib/supabase/server.ts::createPublicClient()` — cliente anónimo sin cookies, necesario porque Next.js prohíbe leer cookies dentro de una función cacheada (`unstable_cache`) o durante la generación estática (`generateStaticParams`). Se usa en los 3 fetchers de `/catalogo` y los 3 de `/producto/[slug]` (ninguno de esos 6 necesita sesión de usuario).
+- El check de "¿puede esta clienta reseñar este producto?" (`getReviewEligibility`) sí depende de la sesión — por eso se sacó del render de la página (que ahora es estática) y se movió a una Server Action que `ReviewsSection.tsx` llama desde el cliente al montar. Pequeño tradeoff: el botón "Escribir reseña" aparece uno o dos frames después de la carga inicial en vez de estar ahí desde el primer render — imperceptible en la práctica.
+- `src/lib/revalidate-storefront.ts` — `revalidateCatalog()` y `revalidateCategories()`, llamadas desde **todos** los puntos que escriben `products`/`categories`/`product_shades`/`product_images`: `saveProduct`, `deleteProduct`, `toggleProductStatus`, `upsertProductsFromImport` (Excel), `saveCategory`, `createCategoryQuick`, el descuento de stock en `POST /api/orders` (checkout), y la restauración de stock al cancelar un pedido (`restoreOrderStock`). Así el catálogo y la ficha de producto se actualizan al instante tras cualquier cambio real, sin esperar los 60s de TTL — el TTL es solo la red de seguridad por si algún punto de escritura queda sin cubrir.
+- Next 16 cambió la firma de `revalidateTag`: el single-arg `revalidateTag(tag)` está deprecado, ahora pide `revalidateTag(tag, 'max')` (stale-while-revalidate, lo recomendado) — se detectó por error de TypeScript al implementar, no por memoria de versiones viejas.
+
+**Pendiente real detectado de paso, sin tocar (fuera de alcance de esta tarea):** `src/app/admin/pedidos/nuevo/actions.ts::createAdminOrder()` (crear pedido manual desde el admin) no descuenta stock de `product_shades` — a diferencia del checkout normal y de `restoreOrderStock`. Puede ser intencional (pedidos manuales ya reconciliados a mano) o un descuido; no se tocó porque no era parte de lo pedido, pero vale la pena decidir qué hacer con eso.
 
 ### ~~Multi-imagen por tono~~ ✅ Ya funcionaba (doc desactualizado)
 

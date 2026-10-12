@@ -1,14 +1,24 @@
 import { cache } from 'react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/server'
 import type { ProductDetail, Review } from '@/types/product'
 import { ProductClient } from '@/components/store/ProductClient'
 import { ProductCard } from '@/components/store/ProductCard'
 import { ReviewsSection } from '@/components/store/ReviewsSection'
-import type { OrderStatus } from '@/types/database'
 
-const QUALIFYING_STATUSES: OrderStatus[] = ['paid', 'preparing', 'shipped', 'delivered']
+// Página estática + ISR: ninguno de los fetchers de acá lee cookies/headers,
+// así que Next la prerenderiza y la sirve desde caché hasta por 60s antes de
+// regenerarla en segundo plano. El check de "¿puede esta clienta reseñar?"
+// SÍ depende de su sesión — por eso vive aparte, como Server Action llamada
+// desde el cliente (ver getReviewEligibility en ./actions y ReviewsSection).
+export const revalidate = 60
+
+export async function generateStaticParams() {
+  const supabase = createPublicClient()
+  const { data } = await supabase.from('products').select('slug').eq('status', 'active')
+  return (data ?? []).map((p) => ({ slug: p.slug }))
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -31,7 +41,7 @@ interface PageProps {
 
 const getProduct = cache(async (slug: string): Promise<ProductDetail | null> => {
   try {
-    const supabase = await createClient()
+    const supabase = createPublicClient()
     const { data: rows } = await supabase
       .from('products')
       .select(`
@@ -52,7 +62,7 @@ const getProduct = cache(async (slug: string): Promise<ProductDetail | null> => 
 
 async function getRelatedProducts(product: ProductDetail): Promise<RelatedProduct[]> {
   try {
-    const supabase = await createClient()
+    const supabase = createPublicClient()
     const select = `
       id, slug, name, price, compare_price,
       product_images(url, alt_text, is_main),
@@ -89,7 +99,7 @@ async function getRelatedProducts(product: ProductDetail): Promise<RelatedProduc
 
 async function getReviews(productId: string): Promise<Review[]> {
   try {
-    const supabase = await createClient()
+    const supabase = createPublicClient()
     const { data } = await supabase
       .from('reviews')
       .select('id, rating, comment, reviewer_name, created_at')
@@ -98,44 +108,6 @@ async function getReviews(productId: string): Promise<Review[]> {
     return (data as Review[] | null) ?? []
   } catch {
     return []
-  }
-}
-
-interface ReviewEligibility {
-  isLoggedIn: boolean
-  canReview: boolean
-  existingReview: Review | null
-}
-
-async function getReviewEligibility(productId: string): Promise<ReviewEligibility> {
-  try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { isLoggedIn: false, canReview: false, existingReview: null }
-
-    const [{ data: eligible }, { data: existingRows }] = await Promise.all([
-      supabase
-        .from('order_items')
-        .select('order_id, orders!inner(status, customer_email)')
-        .eq('product_id', productId)
-        .eq('orders.customer_email', user.email!)
-        .in('orders.status', QUALIFYING_STATUSES)
-        .limit(1),
-      supabase
-        .from('reviews')
-        .select('id, rating, comment, reviewer_name, created_at')
-        .eq('product_id', productId)
-        .eq('user_id', user.id)
-        .limit(1),
-    ])
-
-    return {
-      isLoggedIn: true,
-      canReview: (eligible?.length ?? 0) > 0,
-      existingReview: (existingRows as Review[] | null)?.[0] ?? null,
-    }
-  } catch {
-    return { isLoggedIn: false, canReview: false, existingReview: null }
   }
 }
 
@@ -173,10 +145,9 @@ export default async function ProductoPage({ params }: PageProps) {
   const product = await getProduct(slug)
   if (!product) notFound()
 
-  const [related, reviews, reviewEligibility] = await Promise.all([
+  const [related, reviews] = await Promise.all([
     getRelatedProducts(product),
     getReviews(product.id),
-    getReviewEligibility(product.id),
   ])
 
   const totalStock = product.product_shades
@@ -229,9 +200,6 @@ export default async function ProductoPage({ params }: PageProps) {
             productSlug={slug}
             productId={product.id}
             reviews={reviews}
-            isLoggedIn={reviewEligibility.isLoggedIn}
-            canReview={reviewEligibility.canReview}
-            existingReview={reviewEligibility.existingReview}
           />
         </section>
 

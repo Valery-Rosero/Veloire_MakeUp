@@ -7,6 +7,7 @@ import { requireAdmin } from '@/lib/auth-guard'
 import { logAdminAction } from '@/lib/audit-log'
 import { getFieldsForCategory, validateComparisonValue } from '@/lib/comparison-fields'
 import { nextSkuForBrandCategory } from '@/lib/sku'
+import { revalidateCatalog } from '@/lib/revalidate-storefront'
 
 // Gris neutro usado como color de respaldo cuando un producto "no tiene
 // variación de color" — no es una elección real del admin, así que no debe
@@ -187,6 +188,7 @@ export async function saveProduct(data: SaveProductInput): Promise<{ error?: str
 
   revalidatePath('/admin/productos')
   if (productId) revalidatePath(`/admin/productos/${productId}/editar`)
+  revalidateCatalog()
   redirect('/admin/productos')
   // redirect() throws — unreachable, but satisfies return type
 }
@@ -235,6 +237,7 @@ export async function deleteProduct(productId: string): Promise<{ error?: string
   })
 
   revalidatePath('/admin/productos')
+  revalidateCatalog()
   return {}
 }
 
@@ -278,4 +281,5 @@ export async function toggleProductStatus(
     details: { from: currentStatus, to: newStatus },
   })
   revalidatePath('/admin/productos')
+  revalidateCatalog()
 }

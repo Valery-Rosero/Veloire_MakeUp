@@ -3,8 +3,50 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import type { OrderStatus } from '@/types/database'
+import type { Review } from '@/types/product'
 
 const QUALIFYING_STATUSES: OrderStatus[] = ['paid', 'preparing', 'shipped', 'delivered']
+
+export interface ReviewEligibility {
+  isLoggedIn: boolean
+  canReview: boolean
+  existingReview: Review | null
+}
+
+// Depende de la sesión del visitante (cookies), así que no puede vivir en el
+// render de la página de producto ahora que esa página es estática + ISR —
+// se llama desde el cliente (ReviewsSection) después de montar.
+export async function getReviewEligibility(productId: string): Promise<ReviewEligibility> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { isLoggedIn: false, canReview: false, existingReview: null }
+
+    const [{ data: eligible }, { data: existingRows }] = await Promise.all([
+      supabase
+        .from('order_items')
+        .select('order_id, orders!inner(status, customer_email)')
+        .eq('product_id', productId)
+        .eq('orders.customer_email', user.email!)
+        .in('orders.status', QUALIFYING_STATUSES)
+        .limit(1),
+      supabase
+        .from('reviews')
+        .select('id, rating, comment, reviewer_name, created_at')
+        .eq('product_id', productId)
+        .eq('user_id', user.id)
+        .limit(1),
+    ])
+
+    return {
+      isLoggedIn: true,
+      canReview: (eligible?.length ?? 0) > 0,
+      existingReview: (existingRows as Review[] | null)?.[0] ?? null,
+    }
+  } catch {
+    return { isLoggedIn: false, canReview: false, existingReview: null }
+  }
+}
 
 export async function submitReview(
   productSlug: string,
