@@ -149,3 +149,66 @@ body {
     bottom: 5rem;
   }
 }
+
+/* ─── Barra de desplazamiento ───
+   Píldora rosada que "flota" (el borde transparente le deja aire a los lados)
+   y se ensancha un poco al pasar el mouse. Los colores salen de variables, así
+   que cambia sola entre modo claro y oscuro. color-scheme hace que el resto de
+   controles nativos (selects, fechas) también sigan el tema. */
+:root {
+  color-scheme: light;
+  --scrollbar-track: var(--bg-page);
+  --scrollbar-thumb: linear-gradient(180deg, #e7c3d2 0%, #c08fa2 100%);
+  --scrollbar-thumb-hover: linear-gradient(180deg, #c08fa2 0%, #a56583 100%);
+  --scrollbar-thumb-solid: #c08fa2; /* Firefox no acepta degradados */
+}
+.dark {
+  color-scheme: dark;
+  --scrollbar-thumb: linear-gradient(180deg, #4d3540 0%, #6b4556 100%);
+  --scrollbar-thumb-hover: linear-gradient(180deg, #a56583 0%, #c08fa2 100%);
+  --scrollbar-thumb-solid: #6b4556;
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  background-clip: padding-box;
+  border: 3px solid transparent;
+  border-radius: 9999px;
+  min-height: 48px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+  background-clip: padding-box;
+  border-width: 2px;
+}
+::-webkit-scrollbar-button {
+  display: none; /* sin flechitas arriba y abajo */
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox no tiene ::-webkit-scrollbar. Chrome sí entiende scrollbar-color,
+   pero si se le pone deja de usar el diseño de arriba: por eso va solo aquí. */
+@supports not selector(::-webkit-scrollbar) {
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb-solid) var(--scrollbar-track);
+  }
+}
+
+/* Para filas con scroll lateral (píldoras del catálogo, tarjetas de
+   categoría): se desliza con el dedo pero sin barra visible. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
