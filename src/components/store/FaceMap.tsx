@@ -2,10 +2,11 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useState } from 'react'
-import { AnimatePresence, motion, useReducedMotion, type Transition } from 'framer-motion'
+import { useRef, useState } from 'react'
+import { AnimatePresence, motion, useInView, useReducedMotion, type Transition } from 'framer-motion'
 import { X } from 'lucide-react'
 import { FACE_REGIONS, getFaceRegionLabel } from '@/lib/face-regions'
+import { RevealGroup, revealVariants } from '@/components/ui/Reveal'
 
 interface Category {
   id: string
@@ -17,6 +18,33 @@ interface Category {
 interface Props {
   categories: Category[]
 }
+
+// Elipses de cada zona sobre el viewBox 408×612: [cx, cy, rx, ry]. Las usan
+// tanto las zonas clicables como el destello de "pista" al aparecer.
+const ZONE_SHAPES: Record<string, Array<[number, number, number, number]>> = {
+  rostro: [[204, 245, 116, 185]],
+  frente: [[204, 132, 82, 38]],
+  nariz: [[204, 310, 34, 38]],
+  mejillas: [[110, 278, 54, 44], [298, 278, 54, 44]],
+  cejas: [[143, 184, 58, 19], [265, 184, 58, 19]],
+  ojos: [[143, 228, 58, 26], [265, 228, 58, 26]],
+  labios: [[204, 360, 62, 28]],
+}
+
+function ZoneShapes({ id }: { id: string }) {
+  return (
+    <>
+      {ZONE_SHAPES[id].map(([cx, cy, rx, ry]) => (
+        <ellipse key={`${cx}-${cy}`} cx={cx} cy={cy} rx={rx} ry={ry} />
+      ))}
+    </>
+  )
+}
+
+// Orden del destello: de arriba hacia abajo de la cara.
+const HINT_ORDER = ['frente', 'cejas', 'ojos', 'nariz', 'mejillas', 'labios']
+
+const EASE_OUT = [0.22, 1, 0.36, 1] as const
 
 function groupByZone(categories: Category[]): Map<string, Category[]> {
   const map = new Map<string, Category[]>()
@@ -86,6 +114,8 @@ export function FaceMap({ categories }: Props) {
   const prefersReduced = useReducedMotion()
   const [hoveredZone, setHoveredZone] = useState<string | null>(null)
   const [selectedZone, setSelectedZone] = useState<string | null>(null)
+  const mapRef = useRef<HTMLDivElement>(null)
+  const inView = useInView(mapRef, { once: true, margin: '0px 0px -15% 0px' })
 
   const byZone = groupByZone(categories)
 
@@ -130,6 +160,10 @@ export function FaceMap({ categories }: Props) {
   const rostroActive = hasCategories('rostro')
   const rostroSelected = selectedZone === 'rostro'
 
+  // Si solo hay productos de "rostro", destella la cara entera.
+  const zonesWithProducts = HINT_ORDER.filter(hasCategories)
+  const hintZones = zonesWithProducts.length > 0 ? zonesWithProducts : rostroActive ? ['rostro'] : []
+
   return (
     <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
 
@@ -152,10 +186,14 @@ export function FaceMap({ categories }: Props) {
       </ul>
 
       {/* ── Mapa facial ─────────────────────────────────────────────── */}
-      <div
+      <motion.div
+        ref={mapRef}
         className="relative shrink-0 select-none"
         style={{ width: 300, height: 450 }}
         aria-hidden
+        initial={{ opacity: 0, scale: 0.94 }}
+        animate={inView ? { opacity: 1, scale: 1 } : undefined}
+        transition={{ duration: 0.8, ease: EASE_OUT }}
       >
         {/* Gradiente decorativo detrás de la ilustración */}
         <div
@@ -208,7 +246,8 @@ export function FaceMap({ categories }: Props) {
           */}
           {rostroActive && (
             <ellipse
-              cx="204" cy="245" rx="116" ry="185"
+              cx={ZONE_SHAPES.rostro[0][0]} cy={ZONE_SHAPES.rostro[0][1]}
+              rx={ZONE_SHAPES.rostro[0][2]} ry={ZONE_SHAPES.rostro[0][3]}
               fill="var(--color-accent)"
               pointerEvents="none"
               opacity={rostroSelected ? 0.36 : hoveredZone === 'rostro' ? 0.18 : 0}
@@ -218,36 +257,50 @@ export function FaceMap({ categories }: Props) {
 
           {/* ── Frente — sin blockFallback; si inactive → click pasa a rostro */}
           <ZoneHit {...zoneProps('frente')}>
-            <ellipse cx="204" cy="132" rx="82" ry="38" />
+            <ZoneShapes id="frente" />
           </ZoneHit>
 
           {/* ── Nariz — sin blockFallback; si inactive → click pasa a rostro */}
           <ZoneHit {...zoneProps('nariz')}>
-            <ellipse cx="204" cy="310" rx="34" ry="38" />
+            <ZoneShapes id="nariz" />
           </ZoneHit>
 
           {/* ── Zonas "excepción" — blockFallback=true: nunca disparan rostro ── */}
 
           <ZoneHit {...zoneProps('mejillas')} blockFallback>
-            <ellipse cx="110" cy="278" rx="54" ry="44" />
-            <ellipse cx="298" cy="278" rx="54" ry="44" />
+            <ZoneShapes id="mejillas" />
           </ZoneHit>
 
           <ZoneHit {...zoneProps('cejas')} blockFallback>
-            <ellipse cx="143" cy="184" rx="58" ry="19" />
-            <ellipse cx="265" cy="184" rx="58" ry="19" />
+            <ZoneShapes id="cejas" />
           </ZoneHit>
 
           <ZoneHit {...zoneProps('ojos')} blockFallback>
-            <ellipse cx="143" cy="228" rx="58" ry="26" />
-            <ellipse cx="265" cy="228" rx="58" ry="26" />
+            <ZoneShapes id="ojos" />
           </ZoneHit>
 
           <ZoneHit {...zoneProps('labios')} blockFallback>
-            <ellipse cx="204" cy="360" rx="62" ry="28" />
+            <ZoneShapes id="labios" />
           </ZoneHit>
+
+          {/* ── Pista al aparecer: cada zona con productos destella una vez,
+              de arriba hacia abajo, para mostrar que se pueden tocar ── */}
+          {inView && !prefersReduced && (
+            <g pointerEvents="none" fill="var(--color-accent)">
+              {hintZones.map((id, i) => (
+                <motion.g
+                  key={id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: [0, 0.3, 0] }}
+                  transition={{ duration: 1, ease: 'easeInOut', delay: 0.7 + i * 0.22 }}
+                >
+                  <ZoneShapes id={id} />
+                </motion.g>
+              ))}
+            </g>
+          )}
         </svg>
-      </div>
+      </motion.div>
 
       {/* ── Panel de categorías ─────────────────────────────────────── */}
       <div className="flex-1 w-full">
@@ -304,9 +357,10 @@ export function FaceMap({ categories }: Props) {
               <p className="font-body text-sm text-fg-3 mb-7 leading-relaxed">
                 Toca el rostro o selecciona una zona para descubrir los productos.
               </p>
-              <div className="grid grid-cols-2 gap-2.5">
+              <RevealGroup stagger={0.07} delayChildren={0.25} className="grid grid-cols-2 gap-2.5">
                 {FACE_REGIONS.filter((r) => hasCategories(r.id)).map((region) => (
-                  <button
+                  <motion.button
+                    variants={revealVariants.up}
                     key={region.id}
                     onClick={() => handleZoneClick(region.id)}
                     onMouseEnter={() => setHoveredZone(region.id)}
@@ -319,9 +373,9 @@ export function FaceMap({ categories }: Props) {
                     <span className="text-fg-3 group-hover:text-accent transition-colors text-sm" aria-hidden>
                       →
                     </span>
-                  </button>
+                  </motion.button>
                 ))}
-              </div>
+              </RevealGroup>
             </motion.div>
           )}
         </AnimatePresence>

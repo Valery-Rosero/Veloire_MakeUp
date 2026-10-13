@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { ThemeProvider } from '@/components/ui/ThemeProvider'
 import { CookieConsent } from '@/components/ui/CookieConsent'
+import { MotionProvider } from '@/components/ui/MotionProvider'
 import { SITE_URL } from '@/lib/site'
 import './globals.css'
 
@@ -52,8 +53,10 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
-          {children}
-          <CookieConsent />
+          <MotionProvider>
+            {children}
+            <CookieConsent />
+          </MotionProvider>
         </ThemeProvider>
       </body>
     </html>

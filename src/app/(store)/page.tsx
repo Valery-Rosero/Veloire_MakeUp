@@ -7,6 +7,8 @@ import { HeroSection } from '@/components/store/HeroSection'
 import { FaceMap } from '@/components/store/FaceMap'
 import { ShadeWall, type ShadeWallItem } from '@/components/store/ShadeWall'
 import { type CarouselProduct } from '@/components/store/NewArrivalsCarousel'
+import { Reveal, RevealGroup, RevealItem } from '@/components/ui/Reveal'
+import { SectionHeading } from '@/components/ui/SectionHeading'
 
 // Home estática + ISR: lee solo datos públicos con createPublicClient (sin
 // cookies), así Next la sirve ya armada en vez de consultar Supabase en cada
@@ -121,10 +123,7 @@ function CategoriesSection({ categories }: { categories: Category[] }) {
   return (
     <section className="py-14 md:py-20 border-y border-rim bg-alt">
       <div className="max-w-5xl mx-auto px-4">
-        <div className="flex items-start gap-4 mb-8">
-          <div className="w-0.75 h-10 mt-1 shrink-0 bg-accent" />
-          <h2 className="font-display text-2xl md:text-[28px] text-fg leading-tight">Explora por zona</h2>
-        </div>
+        <SectionHeading title="Explora por zona" className="mb-8" />
         <FaceMap categories={categories} />
       </div>
     </section>
@@ -140,9 +139,10 @@ function HeroProductCard({ product, index }: { product: FeaturedProduct; index: 
   const num = String(index + 1).padStart(2, '0')
 
   return (
+    <Reveal variant="curtain" className="col-span-2 row-span-2 rounded-2xl overflow-hidden">
     <Link
       href={`/producto/${product.slug}`}
-      className="group relative flex flex-col justify-end rounded-2xl overflow-hidden col-span-2 row-span-2 min-h-80"
+      className="group relative flex flex-col justify-end h-full min-h-80"
       style={{ backgroundColor: '#1a1a1a' }}
     >
       {/* Imagen con overlay */}
@@ -194,21 +194,24 @@ function HeroProductCard({ product, index }: { product: FeaturedProduct; index: 
 
         {/* Tonos */}
         {firstShades.length > 0 && (
-          <div className="flex items-center gap-1.5 mb-4">
+          <RevealGroup stagger={0.07} delayChildren={0.6} className="flex items-center gap-1.5 mb-4">
             {firstShades.map((s) => (
-              <span
+              <RevealItem
                 key={s.id}
+                as="span"
+                variant="pop"
                 className="rounded-full border border-white/20 shrink-0"
                 style={{ width: '14px', height: '14px', backgroundColor: s.hex_color }}
-                title={s.name}
-              />
+              >
+                <span className="sr-only">{s.name}</span>
+              </RevealItem>
             ))}
             {activeShades.length > 5 && (
-              <span className="font-body text-[10px]" style={{ color: 'rgba(245,225,211,0.5)' }}>
+              <RevealItem as="span" variant="fade" className="font-body text-[10px]" style={{ color: 'rgba(245,225,211,0.5)' }}>
                 +{activeShades.length - 5}
-              </span>
+              </RevealItem>
             )}
-          </div>
+          </RevealGroup>
         )}
 
         <p className="font-display text-xl font-normal" style={{ color: '#ed4a89' }}>
@@ -216,6 +219,7 @@ function HeroProductCard({ product, index }: { product: FeaturedProduct; index: 
         </p>
       </div>
     </Link>
+    </Reveal>
   )
 }
 
@@ -255,15 +259,7 @@ function FeaturedSection({ products }: { products: FeaturedProduct[] }) {
 
         {/* Encabezado */}
         <div className="flex items-start justify-between mb-10 md:mb-12">
-          <div className="flex items-start gap-4">
-            <div className="w-0.75 h-10 mt-1 shrink-0 bg-accent" />
-            <div>
-              <h2 className="font-display text-2xl md:text-[28px] text-fg leading-tight">Destacados</h2>
-              <p className="font-body text-sm text-accent mt-1" style={{ fontStyle: 'italic' }}>
-                Los favoritos de nuestra comunidad
-              </p>
-            </div>
-          </div>
+          <SectionHeading title="Destacados" subtitle="Los favoritos de nuestra comunidad" />
           <Link
             href="/catalogo"
             className="hidden sm:block text-sm font-body font-medium text-fg-2 hover:text-fg border border-rim hover:border-rim-2 px-4 py-1.5 rounded-lg transition-colors duration-150 mt-1"
@@ -342,18 +338,28 @@ function ValueBanner() {
   return (
     <section className="bg-alt border-y border-rim py-12 md:py-14">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:divide-x md:divide-rim">
-          {VALUE_ITEMS.map(({ icon: Icon, title, description }) => (
-            <div
+        <RevealGroup stagger={0.12} className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          {VALUE_ITEMS.map(({ icon: Icon, title, description }, i) => (
+            <RevealItem
               key={title}
-              className="flex flex-col items-center md:items-start text-center md:text-left gap-2 md:px-8 first:md:pl-0 last:md:pr-0"
+              className="relative flex flex-col items-center md:items-start text-center md:text-left gap-2 md:px-8 first:md:pl-0 last:md:pr-0"
             >
-              <Icon size={20} className="text-accent shrink-0" />
+              {/* Divisor que se dibuja de arriba hacia abajo (reemplaza divide-x) */}
+              {i > 0 && (
+                <RevealItem
+                  as="span"
+                  variant="growY"
+                  className="hidden md:block absolute left-0 inset-y-0 w-px bg-rim origin-top"
+                />
+              )}
+              <RevealItem as="span" variant="pop" className="inline-flex">
+                <Icon size={20} className="text-accent shrink-0" />
+              </RevealItem>
               <p className="font-body text-sm font-medium text-fg">{title}</p>
               <p className="font-body text-xs text-fg-2 leading-relaxed">{description}</p>
-            </div>
+            </RevealItem>
           ))}
-        </div>
+        </RevealGroup>
       </div>
     </section>
   )

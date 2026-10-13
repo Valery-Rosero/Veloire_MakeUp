@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowRight } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion, useScroll, useTransform } from 'framer-motion'
 import type { CarouselProduct } from '@/components/store/NewArrivalsCarousel'
 
 // ─── Círculos flotantes ──────────────────────────────────────────────────────
@@ -19,20 +19,69 @@ const CIRCLES = [
   { color: '#1a1a1a', size: 55,  top: '68%',  left: '62%',  delay: 1.0, dur: 3.9, float: 7,  z: 6 },
 ] as const
 
+// ─── Entrada del texto ───────────────────────────────────────────────────────
+
+const EASE_OUT = [0.22, 1, 0.36, 1] as const
+const TITLE_DELAYS = [0.1, 0.22, 0.34]
+
+// Cada línea del título sube desde abajo de su propio recorte, como si saliera
+// de detrás de una cortina. El padding compensa las letras que bajan de la
+// línea (y, q) y la cursiva de "tú", que el overflow-hidden cortaría.
+function MaskLine({ children, delay, className = '' }: { children: React.ReactNode; delay: number; className?: string }) {
+  return (
+    <span className={`block overflow-hidden pb-[0.12em] -mb-[0.12em] pr-[0.12em] -mr-[0.12em] ${className}`}>
+      <motion.span
+        className="block"
+        initial={{ y: '110%' }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.8, ease: EASE_OUT, delay }}
+      >
+        {children}
+      </motion.span>
+    </span>
+  )
+}
+
+function FadeUp({ children, delay, className }: { children: React.ReactNode; delay: number; className?: string }) {
+  return (
+    <motion.div
+      className={className}
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: EASE_OUT, delay }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
 // ─── Spotlight de producto ────────────────────────────────────────────────────
 
 function ProductSpotlight({ products }: { products: CarouselProduct[] }) {
   const [idx, setIdx] = useState(0)
   const [dir, setDir] = useState(1)
+  // Se pausa con el mouse encima o el foco del teclado adentro (para mirar o
+  // elegir con calma) y con la pestaña en segundo plano. Si la persona pidió
+  // "reducir movimiento", no rota solo.
+  const [hovered, setHovered] = useState(false)
+  const [tabHidden, setTabHidden] = useState(false)
+  const reduced = useReducedMotion()
+  const paused = hovered || tabHidden || !!reduced
 
   useEffect(() => {
-    if (products.length <= 1) return
+    const onVisibility = () => setTabHidden(document.visibilityState === 'hidden')
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [])
+
+  useEffect(() => {
+    if (products.length <= 1 || paused) return
     const t = setInterval(() => {
       setDir(1)
       setIdx((i) => (i + 1) % products.length)
     }, 4500)
     return () => clearInterval(t)
-  }, [products.length])
+  }, [products.length, paused])
 
   const go = (next: number) => {
     setDir(next > idx ? 1 : -1)
@@ -43,7 +92,15 @@ function ProductSpotlight({ products }: { products: CarouselProduct[] }) {
   const img = p.product_images?.find((x) => x.is_main) ?? p.product_images?.[0]
 
   return (
-    <div className="relative w-full h-full">
+    <div
+      className="relative w-full h-full"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onFocus={() => setHovered(true)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHovered(false)
+      }}
+    >
       <AnimatePresence mode="wait" custom={dir}>
         <motion.div
           key={p.id}
@@ -112,8 +169,24 @@ interface HeroSectionProps {
 export function HeroSection({ products = [] }: HeroSectionProps) {
   const hasProducts = products.length > 0
 
+  // Profundidad al hacer scroll: mientras el hero sale de pantalla, la imagen
+  // baja más lento que la página y el texto sube y se desvanece. Son valores
+  // atados al scroll que MotionConfig no frena, así que "reducir movimiento"
+  // se respeta a mano.
+  const sectionRef = useRef<HTMLElement>(null)
+  const reduced = useReducedMotion()
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start start', 'end start'] })
+  const imageY = useTransform(scrollYProgress, [0, 1], [0, 90])
+  const textY = useTransform(scrollYProgress, [0, 1], [0, -50])
+  const textOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0])
+  const imageParallax = reduced ? undefined : { y: imageY }
+  const textParallax = reduced ? undefined : { y: textY, opacity: textOpacity }
+
   return (
-    <section className="relative overflow-hidden bg-alt h-[calc(100svh-64px)] md:h-[calc(100vh-123px)] flex items-center">
+    <section
+      ref={sectionRef}
+      className="relative overflow-hidden bg-alt h-[calc(100svh-64px)] md:h-[calc(100vh-123px)] flex items-center"
+    >
       {/* Círculo grande decorativo */}
       <div
         className="absolute pointer-events-none rounded-full"
@@ -145,48 +218,52 @@ export function HeroSection({ products = [] }: HeroSectionProps) {
         <div className="flex flex-col gap-8 md:hidden">
 
           {/* Imagen primero en mobile */}
-          <motion.div
-            className="relative w-full overflow-hidden rounded-2xl"
-            style={{ height: '62vw', minHeight: 220, maxHeight: 340 }}
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
-          >
-            {hasProducts ? (
-              <ProductSpotlight products={products} />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center bg-highlight rounded-2xl">
-                <span className="font-display text-7xl text-accent select-none">V</span>
-              </div>
-            )}
+          <motion.div style={imageParallax}>
+            <motion.div
+              className="relative w-full overflow-hidden rounded-2xl"
+              style={{ height: '62vw', minHeight: 220, maxHeight: 340 }}
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+            >
+              {hasProducts ? (
+                <ProductSpotlight products={products} />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center bg-highlight rounded-2xl">
+                  <span className="font-display text-7xl text-accent select-none">V</span>
+                </div>
+              )}
+            </motion.div>
           </motion.div>
 
           {/* Texto */}
-          <motion.div
-            className="flex flex-col items-start text-left"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: 'easeOut', delay: 0.1 }}
-          >
-            <p
-              className="font-body uppercase text-accent mb-3"
-              style={{ fontSize: '10px', letterSpacing: '3px' }}
-            >
-              Nueva colección · Pasto, Nariño
-            </p>
+          <motion.div className="flex flex-col items-start text-left" style={textParallax}>
+            <FadeUp delay={0.05}>
+              <p
+                className="font-body uppercase text-accent mb-3"
+                style={{ fontSize: '10px', letterSpacing: '3px' }}
+              >
+                Nueva colección · Pasto, Nariño
+              </p>
+            </FadeUp>
 
             <h1 className="font-display leading-[1.08] tracking-tight text-[52px] text-fg mb-3">
-              El maquillaje<br />que te hace<br />
-              sentir{' '}
-              <em className="text-accent" style={{ fontStyle: 'italic' }}>tú</em>
+              <MaskLine delay={TITLE_DELAYS[0]}>El maquillaje</MaskLine>
+              <MaskLine delay={TITLE_DELAYS[1]}>que te hace</MaskLine>
+              <MaskLine delay={TITLE_DELAYS[2]}>
+                sentir{' '}
+                <em className="text-accent" style={{ fontStyle: 'italic' }}>tú</em>
+              </MaskLine>
             </h1>
 
-            <p className="font-body text-[14px] text-fg-2 leading-[1.7] mb-6 max-w-xs">
-              Maquillaje para quienes lo usan como lo que es:
-              una forma de crear.
-            </p>
+            <FadeUp delay={0.6}>
+              <p className="font-body text-[14px] text-fg-2 leading-[1.7] mb-6 max-w-xs">
+                Maquillaje para quienes lo usan como lo que es:
+                una forma de crear.
+              </p>
+            </FadeUp>
 
-            <div className="flex items-center gap-5">
+            <FadeUp delay={0.7} className="flex items-center gap-5">
               <Link
                 href="/catalogo"
                 className="group inline-flex items-center gap-1.5 text-sm font-body font-medium text-accent hover:text-fg transition-colors duration-150"
@@ -200,7 +277,7 @@ export function HeroSection({ products = [] }: HeroSectionProps) {
               >
                 Novedades
               </Link>
-            </div>
+            </FadeUp>
           </motion.div>
         </div>
 
@@ -208,36 +285,42 @@ export function HeroSection({ products = [] }: HeroSectionProps) {
         <div className="hidden md:grid grid-cols-[55%_45%] gap-10 items-center">
 
           {/* Columna izquierda */}
-          <motion.div
-            className="flex flex-col items-start text-left"
-            initial={{ opacity: 0, y: 28 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: 'easeOut' }}
-          >
-            <p
-              className="font-body uppercase text-accent mb-5"
-              style={{ fontSize: '10px', letterSpacing: '3px' }}
-            >
-              Nueva colección · Pasto, Nariño
-            </p>
+          <motion.div className="flex flex-col items-start text-left" style={textParallax}>
+            <FadeUp delay={0.05}>
+              <p
+                className="font-body uppercase text-accent mb-5"
+                style={{ fontSize: '10px', letterSpacing: '3px' }}
+              >
+                Nueva colección · Pasto, Nariño
+              </p>
+            </FadeUp>
 
             <h1 className="font-display leading-[1.08] tracking-tight mb-0">
-              <span className="block text-[64px] text-fg">El maquillaje</span>
-              <span className="block text-[64px] text-fg">que te hace</span>
-              <span className="block text-[64px] text-fg">
+              <MaskLine delay={TITLE_DELAYS[0]} className="text-[64px] text-fg">El maquillaje</MaskLine>
+              <MaskLine delay={TITLE_DELAYS[1]} className="text-[64px] text-fg">que te hace</MaskLine>
+              <MaskLine delay={TITLE_DELAYS[2]} className="text-[64px] text-fg">
                 sentir{' '}
                 <em className="text-accent" style={{ fontStyle: 'italic' }}>tú</em>
-              </span>
+              </MaskLine>
             </h1>
 
-            <div className="mt-5 mb-5 bg-rose-medium" style={{ width: '40px', height: '2px' }} />
+            {/* Rayita rosa que se dibuja de izquierda a derecha */}
+            <motion.div
+              className="mt-5 mb-5 bg-rose-medium origin-left"
+              style={{ width: '40px', height: '2px' }}
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 0.6, ease: EASE_OUT, delay: 0.55 }}
+            />
 
-            <p className="font-body text-[15px] text-fg-2 max-w-sm leading-[1.7] mb-8">
-              Maquillaje para quienes lo usan como lo que es:
-              una forma de crear.
-            </p>
+            <FadeUp delay={0.6}>
+              <p className="font-body text-[15px] text-fg-2 max-w-sm leading-[1.7] mb-8">
+                Maquillaje para quienes lo usan como lo que es:
+                una forma de crear.
+              </p>
+            </FadeUp>
 
-            <div className="flex flex-row items-center gap-3">
+            <FadeUp delay={0.7} className="flex flex-row items-center gap-3">
               <Link
                 href="/catalogo"
                 className="group inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-noir text-beige text-sm font-body font-medium hover:opacity-90 transition-opacity"
@@ -251,39 +334,41 @@ export function HeroSection({ products = [] }: HeroSectionProps) {
               >
                 Novedades
               </Link>
-            </div>
+            </FadeUp>
           </motion.div>
 
           {/* Columna derecha */}
-          <motion.div
-            className="relative h-130 overflow-hidden"
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.7, ease: 'easeOut', delay: 0.15 }}
-          >
-            {hasProducts ? (
-              <ProductSpotlight products={products} />
-            ) : (
-              <div className="hidden min-[480px]:block absolute inset-0">
-                {CIRCLES.map((c, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute rounded-full"
-                    style={{
-                      width: c.size,
-                      height: c.size,
-                      top: c.top,
-                      left: c.left,
-                      backgroundColor: c.color,
-                      zIndex: c.z,
-                      boxShadow: '0 8px 32px rgba(0,0,0,0.13)',
-                    }}
-                    animate={{ y: [0, -c.float, 0] }}
-                    transition={{ duration: c.dur, repeat: Infinity, delay: c.delay, ease: 'easeInOut' }}
-                  />
-                ))}
-              </div>
-            )}
+          <motion.div style={imageParallax}>
+            <motion.div
+              className="relative h-130 overflow-hidden"
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.7, ease: 'easeOut', delay: 0.15 }}
+            >
+              {hasProducts ? (
+                <ProductSpotlight products={products} />
+              ) : (
+                <div className="hidden min-[480px]:block absolute inset-0">
+                  {CIRCLES.map((c, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute rounded-full"
+                      style={{
+                        width: c.size,
+                        height: c.size,
+                        top: c.top,
+                        left: c.left,
+                        backgroundColor: c.color,
+                        zIndex: c.z,
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.13)',
+                      }}
+                      animate={{ y: [0, -c.float, 0] }}
+                      transition={{ duration: c.dur, repeat: Infinity, delay: c.delay, ease: 'easeInOut' }}
+                    />
+                  ))}
+                </div>
+              )}
+            </motion.div>
           </motion.div>
         </div>
       </div>

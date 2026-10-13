@@ -41,6 +41,9 @@ export function ProductCard({
   categorySlug,
 }: ProductCardProps) {
   const isOutOfStock = totalStock !== undefined && totalStock === 0
+  // Escalonado por fila (máx. 4 por fila): cada fila entra al hacer scroll, así
+  // que la tarjeta 40 no espera 2,4 s — ninguna espera más de 0,18 s.
+  const staggerDelay = (index % 4) * 0.06
   const discountPct = calculateDiscountPct(price, comparePrice)
   const compareIds = useCompareStore((s) => s.productIds)
   const toggleCompare = useCompareStore((s) => s.toggle)
@@ -53,7 +56,7 @@ export function ProductCard({
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-40px' }}
-        transition={{ duration: 0.25, ease: 'easeOut', delay: index * 0.06 }}
+        transition={{ duration: 0.25, ease: 'easeOut', delay: staggerDelay }}
         className="group"
       >
         <Link href={`/producto/${slug}`} className="block">
@@ -170,7 +173,7 @@ export function ProductCard({
       initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.25, ease: 'easeOut', delay: index * 0.06 }}
+      transition={{ duration: 0.25, ease: 'easeOut', delay: staggerDelay }}
       whileHover={{ y: -2 }}
       className="group relative"
     >

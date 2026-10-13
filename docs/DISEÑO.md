@@ -89,17 +89,31 @@ El toggle vive en `ThemeProvider` (`src/components/ui/ThemeProvider.tsx`) y escr
 
 ## Animaciones (Framer Motion)
 
+### Piezas base
+
+- **`MotionProvider`** (`src/components/ui/MotionProvider.tsx`, montado en el layout raíz): `MotionConfig reducedMotion="user"`. Si la persona activó "reducir movimiento", framer salta desplazamientos y escalas en **toda** la app y deja solo los fundidos. Los efectos atados al scroll (parallax del hero) no pasan por acá y revisan `useReducedMotion()` a mano.
+- **`Reveal` / `RevealGroup` / `RevealItem`** (`src/components/ui/Reveal.tsx`): "aparecer al hacer scroll" con el mismo ritmo en toda la tienda. Variantes `up`, `fade`, `slideX`, `pop`, `growY`, `growX`, `curtain`. Se usan desde Server Components. Se disparan una sola vez, cuando el elemento ya entró ~12 % en pantalla.
+- **`SectionHeading`** (`src/components/ui/SectionHeading.tsx`): título con la barrita rosa. La barrita crece de abajo hacia arriba y el título se desliza al lado. Es la firma visual: usarlo en cada título de sección nuevo.
+- Reglas: animar solo `opacity`/`transform` (y `clip-path` en `curtain`). Nada de `width`/`height`/`top`. Nada de animación en checkout, pago, formularios, páginas legales ni admin. Probar siempre con `npm run build && npm start`, porque en `dev` se ven tirones que en producción no existen.
+
+### Dónde está cada una
+
 | Componente | Animación |
 |---|---|
-| `HeroSection` | Fade + slide up al montar (texto y imagen) |
-| `ProductSpotlight` | Slide horizontal entre productos (carrusel) |
-| `CartDrawer` | Slide desde la derecha (`x: '100%' → 0`) |
+| `HeroSection` | El título entra línea por línea desde un recorte (`MaskLine`) y la rayita rosa se dibuja. Al hacer scroll, la imagen baja más lento y el texto sube y se desvanece (parallax). |
+| `ProductSpotlight` | Slide horizontal entre productos. Se pausa con hover o foco, con la pestaña oculta y con "reducir movimiento". |
+| `FaceMap` | La cara aparece con un fundido y escala. Después cada zona con productos destella una vez, de arriba hacia abajo, como pista de que se puede tocar. Los botones de zona entran escalonados. |
+| Destacados (home) | La tarjeta grande se descubre como una cortina que sube (`curtain`) y sus tonos aparecen uno por uno (`pop`). |
+| Franja de beneficios (home) | Ítems escalonados, el ícono hace `pop` y los divisores se dibujan (`growY`). |
+| `ProductCard` | Fade + subida al entrar, escalonado por fila (`index % 4`, máx. 0,18 s). |
+| `CompareTray` / `CompareModal` | La barra sube desde abajo y se sacude si se pasa del máximo. La ventana sube como hoja en móvil y aparece con escala + fade en desktop. |
+| `CartDrawer` | Slide desde la derecha (`x: '100%' → 0`), hoja desde abajo en móvil |
 | `AdminLayoutShell` | Drawer móvil slide desde la izquierda |
 | Modal de salida admin | Scale + fade |
 | `OrderCheckAnimation` | Animación de check al confirmar pedido |
 | Overlay del drawer | Fade (`bg-black/50`) |
 
-Todas las animaciones respetan `prefers-reduced-motion` (Framer Motion lo hace automáticamente cuando se configura).
+Pendiente (fases 2 y 3 del plan de animaciones): Nosotras, catálogo (reacomodo al filtrar), producto, el punto que vuela al carrito, el header que se esconde en móvil, el fundido entre páginas y la 404.
 
 ---
 
