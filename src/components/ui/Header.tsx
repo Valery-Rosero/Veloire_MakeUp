@@ -1,14 +1,16 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTheme } from '@/components/ui/ThemeProvider'
-import { ShoppingBag, Search, User, Sun, Moon, Menu, X } from 'lucide-react'
+import { ShoppingBag, Search, User, Sun, Moon, Menu } from 'lucide-react'
 import { useCartStore } from '@/lib/store/cart'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SearchOverlay } from '@/components/store/SearchOverlay'
 import { SHOW_HEADER_EVENT } from '@/lib/fly-to-cart'
+import { StoreMenuDrawer } from '@/components/ui/StoreMenuDrawer'
+import { ACCENT_STRIPE } from '@/components/ui/brand'
 
 const NAV_LINKS = [
   { label: 'Catálogo',       href: '/catalogo' },
@@ -43,8 +45,7 @@ function AccentStripe() {
       aria-hidden
       style={{
         height: '2px',
-        background:
-          'linear-gradient(90deg, transparent 0%, #8B2252 8%, #ed4a89 28%, #a56583 52%, #c08fa2 72%, transparent 100%)',
+        background: ACCENT_STRIPE,
       }}
     />
   )
@@ -75,6 +76,7 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const closeMenu = useCallback(() => setMenuOpen(false), [])
   const pathname = usePathname()
   const itemCount = useCartStore((s) => s.items.reduce((n, i) => n + i.quantity, 0))
   const openDrawer = useCartStore((s) => s.openDrawer)
@@ -148,7 +150,7 @@ export function Header() {
         // Si se llega al header con el teclado (Tab) estando escondido, vuelve.
         onFocus={() => setHidden(false)}
         className={`sticky top-0 z-40 transition-all duration-300 border-b ${
-          hidden && !menuOpen && !searchOpen ? 'max-md:-translate-y-full' : ''
+          hidden && !menuOpen && !searchOpen ? 'max-lg:-translate-y-full' : ''
         } ${
           scrolled
             ? 'bg-alt/92 backdrop-blur-md border-[#d9bfb0] dark:border-rim shadow-[0_4px_24px_rgba(0,0,0,0.08)]'
@@ -159,8 +161,8 @@ export function Header() {
 
         <div className="max-w-7xl mx-auto px-5 md:px-10">
 
-          {/* ── Mobile: hamburger · logo · íconos ── */}
-          <div className="flex md:hidden items-center h-16">
+          {/* ── Celular y tablet: menú · logo · íconos ── */}
+          <div className="flex lg:hidden items-center h-16">
             <button
               onClick={() => setMenuOpen(true)}
               aria-label="Abrir menú"
@@ -189,8 +191,8 @@ export function Header() {
             </div>
           </div>
 
-          {/* ── Desktop: logo · nav centrado · íconos ── */}
-          <div className="hidden md:flex items-center py-4 relative">
+          {/* ── Desktop (lg+): logo · nav centrado · íconos ── */}
+          <div className="hidden lg:flex items-center py-4 relative">
 
             {/* Logo izquierda — más grande */}
             <Logo size="lg" />
@@ -243,91 +245,15 @@ export function Header() {
         </div>
       </header>
 
-      {/* ── Drawer móvil — desliza desde la izquierda ── */}
-      <AnimatePresence>
-        {menuOpen && (
-          <>
-            {/* Overlay */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm"
-              onClick={() => setMenuOpen(false)}
-            />
-
-            {/* Panel lateral */}
-            <motion.div
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ duration: 0.3, ease: [0.32, 0, 0.67, 0] }}
-              className="fixed top-0 left-0 bottom-0 w-72 z-50 flex flex-col"
-              style={{ backgroundColor: 'var(--bg-alt, #fdf6f0)' }}
-            >
-              <AccentStripe />
-
-              {/* Cabecera */}
-              <div className="flex items-center justify-between px-6 py-5">
-                <Logo size="sm" onClick={() => setMenuOpen(false)} />
-                <button
-                  onClick={() => setMenuOpen(false)}
-                  aria-label="Cerrar menú"
-                  className="w-9 h-9 flex items-center justify-center text-fg-2 hover:text-fg transition-colors rounded-full hover:bg-highlight"
-                >
-                  <X size={18} strokeWidth={1.5} />
-                </button>
-              </div>
-
-              {/* Divisor */}
-              <div className="mx-6 border-t border-[#e8d0c0] dark:border-rim" />
-
-              {/* Links */}
-              <nav className="flex flex-col px-4 pt-4 flex-1">
-                {NAV_LINKS.map((link, i) => {
-                  const active = isNavActive(link.href, pathname)
-                  return (
-                    <motion.div
-                      key={link.href}
-                      initial={{ opacity: 0, x: -12 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.05 + i * 0.06, duration: 0.25, ease: 'easeOut' }}
-                    >
-                      <Link
-                        href={link.href}
-                        onClick={() => setMenuOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-3.5 rounded-xl font-display italic text-[20px] transition-colors duration-150 ${
-                          active
-                            ? 'text-accent bg-highlight'
-                            : 'text-fg hover:text-accent hover:bg-highlight/60'
-                        }`}
-                      >
-                        {active && (
-                          <span className="w-1 h-4 rounded-full bg-accent shrink-0" />
-                        )}
-                        {link.label}
-                      </Link>
-                    </motion.div>
-                  )
-                })}
-              </nav>
-
-              {/* Pie */}
-              <div className="px-4 pb-8 pt-4 border-t border-[#e8d0c0] dark:border-rim mx-2">
-                <Link
-                  href="/cuenta"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-body text-fg-2 hover:text-fg hover:bg-highlight transition-colors"
-                >
-                  <User size={15} strokeWidth={1.5} />
-                  <span>Mi cuenta</span>
-                </Link>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      {/* ── Menú de celular y tablet ── */}
+      <StoreMenuDrawer
+        open={menuOpen}
+        onClose={closeMenu}
+        pathname={pathname}
+        itemCount={itemCount}
+        onSearch={() => setSearchOpen(true)}
+        onCart={openDrawer}
+      />
     </>
   )
 }

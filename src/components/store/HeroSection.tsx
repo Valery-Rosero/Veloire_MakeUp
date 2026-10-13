@@ -168,7 +168,7 @@ export function HeroSection({ products = [] }: HeroSectionProps) {
   return (
     <section
       ref={sectionRef}
-      className="relative overflow-hidden bg-alt h-[calc(100svh-64px)] md:h-[calc(100vh-123px)] flex items-center"
+      className="relative overflow-hidden bg-alt h-[calc(100svh-66px)] lg:h-[calc(100vh-123px)] flex items-center"
     >
       {/* Círculo grande decorativo */}
       <div
