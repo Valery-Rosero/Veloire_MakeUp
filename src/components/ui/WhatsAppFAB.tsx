@@ -1,10 +1,12 @@
+import { toWhatsAppDigits } from '@/lib/format'
+
 interface Props {
   phone: string
   message?: string
 }
 
 export function WhatsAppFAB({ phone, message }: Props) {
-  const digits = phone.replace(/\D/g, '')
+  const digits = toWhatsAppDigits(phone)
   const href = message
     ? `https://wa.me/${digits}?text=${encodeURIComponent(message)}`
     : `https://wa.me/${digits}`

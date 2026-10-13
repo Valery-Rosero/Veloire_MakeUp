@@ -48,3 +48,11 @@ export function calculateDiscountPct(
 }
 
 export { slugify } from '@/lib/slug'
+
+// wa.me exige el número con código de país y solo dígitos. Si en el panel se
+// guardó un celular colombiano sin el 57 (10 dígitos que empiezan por 3), se
+// lo agregamos — si no, el link abre WhatsApp pero no el chat de la tienda.
+export function toWhatsAppDigits(raw: string): string {
+  const digits = raw.replace(/\D/g, '')
+  return /^3\d{9}$/.test(digits) ? `57${digits}` : digits
+}

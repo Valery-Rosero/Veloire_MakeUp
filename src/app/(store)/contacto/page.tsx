@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { createAdminClient } from '@/lib/supabase/server'
+import { toWhatsAppDigits } from '@/lib/format'
 import { Mail, Clock, MapPin } from 'lucide-react'
 
 export const metadata: Metadata = {
@@ -16,7 +17,7 @@ async function getContactConfig(): Promise<{ whatsapp: string; instagram: string
       .in('key', ['whatsapp_number', 'instagram_url', 'store_email'])
     const map = Object.fromEntries((data ?? []).map(({ key, value }) => [key, value]))
     return {
-      whatsapp: (map.whatsapp_number || '573155924590').replace(/\D/g, ''),
+      whatsapp: toWhatsAppDigits(map.whatsapp_number || '573155924590'),
       instagram: map.instagram_url || 'https://www.instagram.com/veloire.v?igsh=eTRjY3N5N3U1NDhi',
       email: map.store_email || 'veloirev.f@gmail.com',
     }

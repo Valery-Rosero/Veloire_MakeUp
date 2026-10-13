@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { CookieSettingsButton } from '@/components/ui/CookieConsent'
+import { toWhatsAppDigits } from '@/lib/format'
 
 interface FooterProps {
   instagramUrl?: string
@@ -19,7 +20,7 @@ const DEFAULT_EMAIL = 'veloirev.f@gmail.com'
 
 export function Footer({ instagramUrl, whatsappNumber, email }: FooterProps) {
   const waHref = whatsappNumber
-    ? `https://wa.me/${whatsappNumber.replace(/\D/g, '')}`
+    ? `https://wa.me/${toWhatsAppDigits(whatsappNumber)}`
     : null
   const igHref = instagramUrl || DEFAULT_INSTAGRAM_URL
   const contactEmail = email || DEFAULT_EMAIL

@@ -4,6 +4,7 @@ import { CartPortal } from '@/components/store/CartPortal'
 import { CompareTray } from '@/components/store/CompareTray'
 import { WhatsAppFAB } from '@/components/ui/WhatsAppFAB'
 import { createAdminClient } from '@/lib/supabase/server'
+import { toWhatsAppDigits } from '@/lib/format'
 
 // Este layout envuelve toda la tienda: si leyera cookies (sesión), TODAS sus
 // páginas quedarían dinámicas y /producto/[slug] perdería el ISR. Por eso no
@@ -33,7 +34,7 @@ export default async function StoreLayout({ children }: { children: React.ReactN
 
   const deliveryFee = parseInt(config.delivery_fee ?? '5000', 10)
   const waPhone = config.whatsapp_number
-    ? config.whatsapp_number.replace(/\D/g, '')
+    ? toWhatsAppDigits(config.whatsapp_number)
     : '573155924590'
 
   return (
