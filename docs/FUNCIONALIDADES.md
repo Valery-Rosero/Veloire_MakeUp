@@ -102,6 +102,10 @@ Estado: **En desarrollo activo**. El core de la tienda y el panel admin están o
 - Métodos de pago con colores de marca (Nequi, Bancolombia, Efectivo)
 - Política de devoluciones (ventana de 24 h, excepción por higiene)
 
+### Compartir en redes
+
+- `opengraph-image.tsx` / `twitter-image.tsx`: imagen generada con Dream Avenue y los colores del panel de login (`src/lib/og-image.tsx`). Las fichas de producto usan la foto del producto
+
 ### Páginas de error
 
 - **`src/app/not-found.tsx`**: 404 con diseño Vèloire, font display italic, CTA a catálogo e inicio

@@ -11,10 +11,26 @@ const inter = Inter({
   display: 'swap',
 })
 
+const DESCRIPTION =
+  'Tienda de maquillaje online desde Pasto, Nariño. Encuentra tu tono perfecto entre nuestra colección.'
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: 'Vèloire — Maquillaje',
-  description: 'Tienda de maquillaje online. Encuentra tu tono perfecto entre nuestra colección artesanal.',
+  title: {
+    default: 'Vèloire — Maquillaje',
+    template: '%s — Vèloire',
+  },
+  description: DESCRIPTION,
+  openGraph: {
+    siteName: 'Vèloire',
+    locale: 'es_CO',
+    type: 'website',
+    title: 'Vèloire — Maquillaje',
+    description: DESCRIPTION,
+  },
+  twitter: {
+    card: 'summary_large_image',
+  },
 }
 
 export default function RootLayout({

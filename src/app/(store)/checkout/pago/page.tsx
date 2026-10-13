@@ -1,6 +1,12 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { PagoClient } from '@/components/store/PagoClient'
+
+export const metadata: Metadata = {
+  title: 'Pago',
+  robots: { index: false },
+}
 
 async function getPageData(): Promise<{
   nequiNumber: string

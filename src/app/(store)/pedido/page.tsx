@@ -1,7 +1,13 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Search } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
+
+export const metadata: Metadata = {
+  title: 'Rastrear pedido',
+  robots: { index: false },
+}
 
 interface PageProps {
   searchParams: Promise<{ numero?: string; correo?: string }>

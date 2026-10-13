@@ -1,7 +1,13 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { CheckoutClient } from '@/components/store/CheckoutClient'
 import type { CheckoutFormData } from '@/lib/validations/checkout'
+
+export const metadata: Metadata = {
+  title: 'Finalizar compra',
+  robots: { index: false },
+}
 
 export default async function CheckoutPage() {
   const supabase = await createClient()

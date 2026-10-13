@@ -105,7 +105,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   const { categoria } = await searchParams
   if (!categoria) {
     return {
-      title: 'Catálogo — Vèloire',
+      title: 'Catálogo',
       description: 'Explora nuestra colección completa de maquillaje artesanal.',
     }
   }
@@ -118,11 +118,11 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
       .limit(1)
     const cat = (catRows as Array<{ name: string; description: string | null }> | null)?.[0]
     return {
-      title: `${cat?.name ?? 'Catálogo'} — Vèloire`,
+      title: cat?.name ?? 'Catálogo',
       description: cat?.description ?? 'Explora nuestra colección de maquillaje.',
     }
   } catch {
-    return { title: 'Catálogo — Vèloire' }
+    return { title: 'Catálogo' }
   }
 }
 

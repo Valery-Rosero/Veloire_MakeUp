@@ -5,7 +5,7 @@ import { ArrowRight, Heart, Sparkles, MapPin } from 'lucide-react'
 const LERY_IG = 'https://www.instagram.com/leery.me?igsh=Njhodmxpa3FocHNw'
 
 export const metadata: Metadata = {
-  title: 'Sobre nosotras — Vèloire MakeUp',
+  title: 'Sobre nosotras',
   description: 'Conoce la historia detrás de Vèloire: maquillaje para personas creativas, desde Pasto, Nariño.',
 }
 

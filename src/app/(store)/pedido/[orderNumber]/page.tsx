@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -12,6 +13,11 @@ import { formatDateTime } from '@/lib/format'
 
 interface PageProps {
   params: Promise<{ orderNumber: string }>
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { orderNumber } = await params
+  return { title: `Pedido ${orderNumber}`, robots: { index: false } }
 }
 
 // ─── Timeline config ──────────────────────────────────────────────────────────

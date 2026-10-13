@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Package } from 'lucide-react'
@@ -6,6 +7,11 @@ import { ProfileForm } from '@/components/cuenta/ProfileForm'
 import { SignOutButton } from '@/components/cuenta/SignOutButton'
 import { formatPrice, formatDate } from '@/lib/format'
 import type { OrderStatus } from '@/types/database'
+
+export const metadata: Metadata = {
+  title: 'Mi cuenta',
+  robots: { index: false },
+}
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   pending_payment: 'Pago pendiente',

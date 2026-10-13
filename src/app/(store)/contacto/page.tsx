@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Mail, Clock } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Contacto — Vèloire MakeUp',
+  title: 'Contacto',
   description: 'Escríbenos por WhatsApp o email. Atención personalizada desde Pasto, Nariño.',
 }
 

@@ -4,7 +4,7 @@ import { MapPin, Clock, CreditCard, Package, CheckCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
-  title: 'Política de envíos — Vèloire MakeUp',
+  title: 'Política de envíos',
   description: 'Información sobre envíos, tiempos de entrega y métodos de pago en Pasto, Nariño.',
 }
 
