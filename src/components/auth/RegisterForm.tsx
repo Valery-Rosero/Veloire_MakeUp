@@ -41,6 +41,8 @@ export function RegisterForm() {
   const [duplicateEmail, setDuplicateEmail] = useState(false)
   const [sent, setSent] = useState(false)
   const [registeredEmail, setRegisteredEmail] = useState('')
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
+  const [termsTouched, setTermsTouched] = useState(false)
 
   const errors = validate(form)
   const visibleErrors: FormErrors = Object.fromEntries(
@@ -60,7 +62,8 @@ export function RegisterForm() {
   async function handleSubmit(e: { preventDefault(): void; currentTarget: HTMLFormElement }) {
     e.preventDefault()
     setTouched({ name: true, email: true, password: true, confirm: true })
-    if (Object.keys(errors).length > 0) return
+    setTermsTouched(true)
+    if (Object.keys(errors).length > 0 || !acceptedTerms) return
 
     setLoading(true)
     setServerError(null)
@@ -71,7 +74,9 @@ export function RegisterForm() {
       email: form.email,
       password: form.password,
       options: {
-        data: { full_name: form.name.trim() },
+        // terms_accepted_at: prueba de la autorización de tratamiento de datos
+        // que exige la Ley 1581 de 2012.
+        data: { full_name: form.name.trim(), terms_accepted_at: new Date().toISOString() },
       },
     })
 
@@ -192,6 +197,33 @@ export function RegisterForm() {
           error={visibleErrors.confirm}
           disabled={loading}
         />
+
+        <div>
+          <label className="flex items-start gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={acceptedTerms}
+              onChange={(e) => setAcceptedTerms(e.target.checked)}
+              disabled={loading}
+              aria-invalid={termsTouched && !acceptedTerms}
+              className="mt-0.5 w-4 h-4 shrink-0 rounded border-rim accent-accent"
+            />
+            <span className="font-body text-xs text-fg-2 leading-relaxed">
+              Acepto los{' '}
+              <Link href="/terminos" target="_blank" className="text-accent underline-offset-4 hover:underline">
+                Términos y condiciones
+              </Link>{' '}
+              y autorizo el tratamiento de mis datos según la{' '}
+              <Link href="/privacidad" target="_blank" className="text-accent underline-offset-4 hover:underline">
+                Política de privacidad
+              </Link>
+              .
+            </span>
+          </label>
+          {termsTouched && !acceptedTerms && (
+            <p className="text-xs text-error mt-1">Debes aceptar para crear tu cuenta.</p>
+          )}
+        </div>
 
         {duplicateEmail && (
           <p className="text-sm font-body text-error bg-error/10 px-3 py-2 rounded-lg leading-relaxed">

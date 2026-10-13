@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { CookieSettingsButton } from '@/components/ui/CookieConsent'
 
 interface FooterProps {
   instagramUrl?: string
@@ -103,10 +104,19 @@ export function Footer({ instagramUrl, whatsappNumber, email }: FooterProps) {
           </div>
         </div>
 
-        <div className="mt-10 pt-6 border-t border-rim text-center">
-          <p className="text-xs text-fg-3">
-            © {new Date().getFullYear()} Vèloire. Todos los derechos reservados.
+        <div className="mt-10 pt-6 border-t border-rim flex flex-col items-center gap-3 md:flex-row md:justify-between">
+          <p className="text-xs text-fg-3 text-center md:text-left">
+            © {new Date().getFullYear()} Vèloire · Pasto, Nariño, Colombia. Todos los derechos reservados.
           </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-fg-3">
+            <Link href="/privacidad" className="hover:text-accent transition-colors">
+              Política de privacidad
+            </Link>
+            <Link href="/terminos" className="hover:text-accent transition-colors">
+              Términos y condiciones
+            </Link>
+            <CookieSettingsButton className="hover:text-accent transition-colors" />
+          </div>
         </div>
       </div>
     </footer>

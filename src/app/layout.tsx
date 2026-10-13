@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { ThemeProvider } from '@/components/ui/ThemeProvider'
+import { CookieConsent } from '@/components/ui/CookieConsent'
 import { SITE_URL } from '@/lib/site'
 import './globals.css'
 
@@ -52,6 +53,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
           {children}
+          <CookieConsent />
         </ThemeProvider>
       </body>
     </html>

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
-import { Mail, Clock } from 'lucide-react'
+import { Mail, Clock, MapPin } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Contacto',
@@ -203,6 +203,13 @@ export default async function ContactoPage() {
                   <span className="font-body text-xs text-fg-3">Domingos</span>
                   <span className="font-body text-xs font-medium text-fg">Variable</span>
                 </div>
+              </div>
+
+              <div className="flex items-start gap-2 pt-3 border-t border-rim">
+                <MapPin size={14} className="text-accent mt-0.5 shrink-0" strokeWidth={1.5} />
+                <p className="font-body text-xs text-fg-2 leading-relaxed">
+                  Tienda en línea con domicilios en <span className="font-medium text-fg">Pasto, Nariño, Colombia</span>.
+                </p>
               </div>
             </div>
 

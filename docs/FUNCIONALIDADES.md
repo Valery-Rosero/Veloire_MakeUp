@@ -102,6 +102,19 @@ Estado: **En desarrollo activo**. El core de la tienda y el panel admin están o
 - Métodos de pago con colores de marca (Nequi, Bancolombia, Efectivo)
 - Política de devoluciones (ventana de 24 h, excepción por higiene)
 
+### Privacidad y términos (`/privacidad`, `/terminos`)
+
+- Estáticas, con el componente compartido `LegalPage` (mismo encabezado que `/envios`); datos del responsable en `LEGAL_CONTACT`
+- Privacidad conforme a la Ley 1581 de 2012: responsable, datos recolectados, finalidades, derechos, plazos de respuesta (10/15 días hábiles), proveedores (Supabase, Resend, Google Analytics) y cookies
+- Términos alineados con `/envios` y la Ley 1480 de 2011 (garantía legal; sin retracto en bienes de uso personal)
+- Enlazadas en el footer y en la casilla obligatoria de `/registro`
+
+### Cookies y analíticas
+
+- Banner `CookieConsent` montado en el layout raíz (no en `/admin`): "Aceptar todas" o "Rechazar analíticas" (las cookies necesarias siempre están activas). Se guarda en `localStorage` (`veloire-cookie-consent`)
+- Google Analytics 4 solo se carga con consentimiento y si existe `NEXT_PUBLIC_GA_ID`. Retirar el consentimiento lo apaga (`ga-disable-ID`) y borra las cookies `_ga`
+- "Configurar cookies" en el footer vuelve a mostrar el banner
+
 ### Compartir en redes
 
 - `opengraph-image.tsx` / `twitter-image.tsx`: imagen generada con Dream Avenue y los colores del panel de login (`src/lib/og-image.tsx`). Las fichas de producto usan la foto del producto
