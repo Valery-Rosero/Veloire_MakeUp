@@ -94,7 +94,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (user && (pathname === '/login' || pathname === '/registro')) {
-    return NextResponse.redirect(new URL(role === 'admin' ? '/admin' : '/', request.url))
+    return NextResponse.redirect(new URL(isAdminRole(role) ? '/admin' : '/', request.url))
   }
 
   return supabaseResponse
