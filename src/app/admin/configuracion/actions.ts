@@ -21,4 +21,7 @@ export async function updateConfig(key: string, value: string) {
     details: { key, value },
   })
   revalidatePath('/admin/configuracion')
+  // El footer, el botón de WhatsApp y el costo de domicilio salen de esta tabla
+  // y el layout de la tienda está en caché: se refresca todo el sitio.
+  revalidatePath('/', 'layout')
 }
