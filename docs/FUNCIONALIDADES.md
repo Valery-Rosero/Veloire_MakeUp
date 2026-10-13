@@ -42,7 +42,7 @@ Estado: **En desarrollo activo**. El core de la tienda y el panel admin están o
 ### Comparador de productos (`/comparar`)
 
 - Botón de agregar/quitar (ícono de balanza) en las tarjetas del catálogo — hasta 4 productos, guardados en `localStorage` vía Zustand (`src/lib/store/compare.ts`, key `veloire-compare`)
-- Bandeja flotante (`CompareTray`) visible con 2+ productos seleccionados, con link a `/comparar`
+- Bandeja flotante (`CompareTray`) visible desde el 1.er producto: con 1 pide "Elige otro producto" (botón Comparar apagado), con 2–3 activa el link a `/comparar`, con 4 marca "máximo"; si se intenta agregar un 5.º se sacude y avisa "quita uno para agregar otro". En la tarjeta el botón dice "Comparar" / "✓ Agregado"
 - Tabla lado a lado en `/comparar` — permite comparar productos de **categorías distintas**, mostrando solo los campos en común
 - Los campos por categoría (fijos, no editables desde el admin) viven en `src/lib/comparison-fields.ts` — única fuente de verdad compartida con el formulario de producto, el importador Excel y esta tabla
 - Los valores de cada producto se guardan en `products.comparison` (jsonb)

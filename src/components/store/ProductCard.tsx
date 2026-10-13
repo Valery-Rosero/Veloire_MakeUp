@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Scale } from 'lucide-react'
+import { Check, Scale } from 'lucide-react'
 import { calculateDiscountPct } from '@/lib/format'
 import { useCompareStore } from '@/lib/store/compare'
 
@@ -179,12 +179,12 @@ export function ProductCard({
           type="button"
           onClick={() => toggleCompare(productId!)}
           aria-pressed={inCompare}
-          aria-label={inCompare ? 'Quitar de comparar' : 'Agregar a comparar'}
-          className={`absolute top-2 right-2 z-20 w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+          className={`absolute top-2 right-2 z-20 h-7 px-2.5 rounded-full flex items-center gap-1 text-[11px] font-body font-medium shadow-sm transition-colors ${
             inCompare ? 'bg-accent text-white' : 'bg-card/90 text-fg-2 hover:text-accent'
           }`}
         >
-          <Scale size={14} />
+          {inCompare ? <Check size={12} strokeWidth={2.5} /> : <Scale size={12} />}
+          {inCompare ? 'Agregado' : 'Comparar'}
         </button>
       )}
       <Link href={`/producto/${slug}`} className="block">
