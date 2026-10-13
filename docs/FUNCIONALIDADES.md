@@ -39,11 +39,11 @@ Estado: **En desarrollo activo**. El core de la tienda y el panel admin están o
 - `notFound()` si el slug no existe o el producto está inactivo
 - **Estático + ISR**: `generateStaticParams()` prerenderiza todos los productos activos en el build, `revalidate = 60`. Cualquier cambio real (admin, importador Excel, checkout, cancelación) invalida el caché al instante vía `revalidateCatalog()` (`src/lib/revalidate-storefront.ts`) — el TTL de 60s es solo la red de seguridad
 
-### Comparador de productos (`/comparar`)
+### Comparador de productos (ventana `CompareModal`)
 
-- Botón de agregar/quitar (ícono de balanza) en las tarjetas del catálogo — hasta 4 productos, guardados en `localStorage` vía Zustand (`src/lib/store/compare.ts`, key `veloire-compare`)
-- Bandeja flotante (`CompareTray`) visible desde el 1.er producto: con 1 pide "Elige otro producto" (botón Comparar apagado), con 2–3 activa el link a `/comparar`, con 4 marca "máximo"; si se intenta agregar un 5.º se sacude y avisa "quita uno para agregar otro". En la tarjeta el botón dice "Comparar" / "✓ Agregado"
-- Tabla lado a lado en `/comparar` — permite comparar productos de **categorías distintas**, mostrando solo los campos en común
+- Botón "Comparar" / "✓ Agregado" en las tarjetas del catálogo — hasta 4 productos, guardados en `localStorage` vía Zustand (`src/lib/store/compare.ts`, key `veloire-compare`)
+- Bandeja flotante (`CompareTray`) visible desde el 1.er producto: con 1 pide "Elige otro producto" (botón Comparar apagado), con 2–3 activa el botón que abre la ventana, con 4 marca "máximo"; si se intenta agregar un 5.º se sacude y avisa "quita uno para agregar otro".
+- Tabla lado a lado dentro de una ventana (`CompareModal`, montada en el layout de la tienda): se cierra con la X, Esc, tocando afuera, al navegar, o sola cuando quedan menos de 2 productos. En móvil sube desde abajo como el carrito. `/comparar` ya no existe: redirige (308) a `/catalogo` desde `next.config.ts`. Los datos los trae `getProductsForCompare` (`src/lib/compare-actions.ts`, cliente público, máx. 4 ids). Permite comparar productos de **categorías distintas**, mostrando solo los campos en común
 - Los campos por categoría (fijos, no editables desde el admin) viven en `src/lib/comparison-fields.ts` — única fuente de verdad compartida con el formulario de producto, el importador Excel y esta tabla
 - Los valores de cada producto se guardan en `products.comparison` (jsonb)
 

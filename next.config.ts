@@ -18,6 +18,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      // El comparador ahora es una ventana (CompareModal), ya no una página.
+      { source: '/comparar', destination: '/catalogo', permanent: true },
+    ]
+  },
   async headers() {
     return [
       {

@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X, Scale } from 'lucide-react'
 import { useCompareStore, MAX_COMPARE } from '@/lib/store/compare'
@@ -10,6 +9,8 @@ export function CompareTray() {
   const limitNotice = useCompareStore((s) => s.limitNotice)
   const limitHits = useCompareStore((s) => s.limitHits)
   const clear = useCompareStore((s) => s.clear)
+  const isOpen = useCompareStore((s) => s.isOpen)
+  const open = useCompareStore((s) => s.open)
 
   const count = productIds.length
   const ready = count >= 2
@@ -30,7 +31,7 @@ export function CompareTray() {
 
   return (
     <AnimatePresence>
-      {count >= 1 && (
+      {count >= 1 && !isOpen && (
         <motion.div
           initial={{ y: 80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -61,12 +62,14 @@ export function CompareTray() {
               )}
             </div>
             {ready ? (
-              <Link
-                href="/comparar"
+              <button
+                type="button"
+                onClick={open}
+                aria-haspopup="dialog"
                 className="font-body text-sm font-medium px-3 py-1.5 rounded-xl bg-noir text-beige hover:opacity-90 transition-opacity whitespace-nowrap shrink-0"
               >
                 Comparar →
-              </Link>
+              </button>
             ) : (
               <span
                 aria-disabled="true"

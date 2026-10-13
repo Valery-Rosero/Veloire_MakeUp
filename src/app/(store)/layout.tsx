@@ -2,6 +2,7 @@ import { Header } from '@/components/ui/Header'
 import { Footer } from '@/components/ui/Footer'
 import { CartPortal } from '@/components/store/CartPortal'
 import { CompareTray } from '@/components/store/CompareTray'
+import { CompareModal } from '@/components/store/CompareModal'
 import { WhatsAppFAB } from '@/components/ui/WhatsAppFAB'
 import { createAdminClient } from '@/lib/supabase/server'
 import { toWhatsAppDigits } from '@/lib/format'
@@ -52,6 +53,7 @@ export default async function StoreLayout({ children }: { children: React.ReactN
         message="Hola, quiero hacer un pedido de Vèloire 💄"
       />
       <CompareTray />
+      <CompareModal />
     </>
   )
 }
