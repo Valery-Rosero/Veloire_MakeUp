@@ -21,6 +21,29 @@ SQL en `supabase/migrations/20261012_checkout_atomico.sql` (primer archivo de mi
 
 Pendiente menor: la cancelación automática no envía correo a la clienta (solo ve el estado en `/pedido`); las cancelaciones manuales sí lo envían.
 
+### ~~Lista de lanzamiento (15 puntos)~~ ✅ Completado (2026-10-12)
+
+| Punto | Cómo quedó |
+|---|---|
+| Política de privacidad | `/privacidad` — Ley 1581 de 2012 / Decreto 1377 de 2013. Responsable: Valery Rosero (persona natural), Pasto. Componente compartido `LegalPage` |
+| Términos y condiciones | `/terminos` — alineado con `/envios` (24 h para reportar, excepción por higiene), garantía legal y sin derecho de retracto en bienes de uso personal (art. 47, Ley 1480 de 2011) |
+| Autorización de datos | Casilla obligatoria en `/registro`; la fecha queda en `user_metadata.terms_accepted_at` como prueba de la autorización |
+| Compresión de imágenes | `ImageUploader` redimensiona a máx. 1600 px y convierte a WebP antes de subir (acepta hasta 20 MB de entrada; Safari, que no codifica WebP, sube el original). Caché de 1 año en Storage |
+| Meta título por página | Plantilla `%s — Vèloire` en el layout raíz; todas las páginas públicas con título propio; las privadas con `noindex` |
+| Errores en formularios | Corregidos los que fallaban en silencio: recuperar contraseña (decía "revisa tu correo" aunque fallara), `ConfigForm` (decía "Guardado" aunque fallara), `OrderStatusUpdater`, `ToggleProductStatus` |
+| Dirección de contacto | "Pasto, Nariño, Colombia" en contacto, footer, privacidad y términos (tienda en línea, sin local) |
+| Banner de cookies | `CookieConsent` (layout raíz, no aparece en `/admin`). "Configurar cookies" en el footer reabre el banner |
+| Texto alternativo | Respaldos `alt_text \|\| nombre` (antes `??`, que dejaba vacío un texto `""`) |
+| Página 404 / "Gracias" | Ya existían (`not-found.tsx`, `/pedido/[número]`) |
+| Breakpoints móvil | Auditado: sin anchos fijos que desborden; la tabla de `/comparar` tiene scroll horizontal a propósito |
+| Analíticas | Google Analytics 4, **solo se carga si la clienta acepta**; si retira el consentimiento se apaga y se borran las cookies `_ga` |
+| Favicon | El `favicon.ico` era el triángulo de Vercel por defecto; regenerado desde el logo "Vè" (16/32/48 px, RGBA) |
+| Imagen Open Graph | `opengraph-image.tsx` / `twitter-image.tsx` generadas con Dream Avenue y los colores del login. Las fichas de producto siguen usando la foto del producto |
+
+**Falta de tu lado:**
+- **Google Analytics:** crear la propiedad en analytics.google.com y poner su ID en la variable `NEXT_PUBLIC_GA_ID=G-XXXXXXX` (en `.env.local` y en el hosting). Sin esa variable el banner aparece pero no se carga nada.
+- **Revisión legal:** los textos de privacidad y términos siguen la ley colombiana, pero conviene que los lea una abogada antes del lanzamiento.
+
 ### ~~Páginas en el footer que no existen~~ ✅ Completado
 
 `/nosotras`, `/contacto` y `/envios` están implementadas.

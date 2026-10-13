@@ -267,11 +267,12 @@ export async function previewNextSku(
 export async function toggleProductStatus(
   productId: string,
   currentStatus: 'draft' | 'active' | 'inactive'
-) {
+): Promise<{ error?: string }> {
   const admin = await requireAdmin()
   const supabase = await createAdminClient()
   const newStatus = currentStatus === 'active' ? 'inactive' : 'active'
-  await supabase.from('products').update({ status: newStatus }).eq('id', productId)
+  const { error } = await supabase.from('products').update({ status: newStatus }).eq('id', productId)
+  if (error) return { error: error.message }
   await logAdminAction({
     actorId: admin.id,
     actorEmail: admin.email,
@@ -282,4 +283,5 @@ export async function toggleProductStatus(
   })
   revalidatePath('/admin/productos')
   revalidateCatalog()
+  return {}
 }

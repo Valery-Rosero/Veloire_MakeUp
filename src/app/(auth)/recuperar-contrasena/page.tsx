@@ -14,6 +14,7 @@ export default function RecuperarContrasenaPage() {
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
   const [secondsLeft, setSecondsLeft] = useState(0)
+  const [serverError, setServerError] = useState<string | null>(null)
 
   useEffect(() => {
     if (secondsLeft <= 0) return
@@ -23,11 +24,23 @@ export default function RecuperarContrasenaPage() {
 
   async function send() {
     setLoading(true)
-    const supabase = createClient()
-    await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/nueva-contrasena`,
-    })
+    setServerError(null)
+    const { error } = await createClient()
+      .auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/nueva-contrasena`,
+      })
+      .catch(() => ({ error: { status: 0 } }))
     setLoading(false)
+
+    if (error) {
+      setServerError(
+        error.status === 429
+          ? 'Demasiados intentos. Espera unos minutos antes de pedir otro enlace.'
+          : 'No pudimos enviar el correo. Revisa tu conexión e inténtalo de nuevo.'
+      )
+      return
+    }
+
     setSent(true)
     setSecondsLeft(RESEND_COOLDOWN)
   }
@@ -73,6 +86,7 @@ export default function RecuperarContrasenaPage() {
             </button>
           )}
         </p>
+        {serverError && <p className="font-body text-xs text-error mt-3">{serverError}</p>}
         <div className="mt-8">
           <Link
             href="/login"
@@ -114,6 +128,12 @@ export default function RecuperarContrasenaPage() {
           error={emailError ?? undefined}
           disabled={loading}
         />
+
+        {serverError && (
+          <p className="text-sm font-body text-error bg-error/10 px-3 py-2 rounded-lg leading-relaxed">
+            {serverError}
+          </p>
+        )}
 
         <button
           type="submit"

@@ -85,6 +85,7 @@ export function ConfigForm({ config }: Props) {
   )
   const [fieldErrors, setFieldErrors] = useState<Record<string, string | null>>({})
   const [savedSection, setSavedSection] = useState<string | null>(null)
+  const [failedSection, setFailedSection] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   function validateSection(fields: FieldDef[]): boolean {
@@ -105,10 +106,15 @@ export function ConfigForm({ config }: Props) {
     e.preventDefault()
     if (!validateSection(section.fields)) return
 
+    setFailedSection(null)
     startTransition(async () => {
-      await Promise.all(
+      const results = await Promise.all(
         section.fields.map((f) => updateConfig(f.key, values[f.key] ?? ''))
       )
+      if (results.some((r) => r.error)) {
+        setFailedSection(section.title)
+        return
+      }
       setSavedSection(section.title)
       setTimeout(() => setSavedSection(null), 2000)
     })
@@ -163,6 +169,11 @@ export function ConfigForm({ config }: Props) {
               <span className="flex items-center gap-1 text-sm font-body text-success">
                 <Check size={13} />
                 Guardado
+              </span>
+            )}
+            {failedSection === section.title && (
+              <span role="alert" className="text-sm font-body text-error">
+                No se pudo guardar. Inténtalo de nuevo.
               </span>
             )}
           </div>
