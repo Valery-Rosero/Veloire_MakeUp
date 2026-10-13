@@ -13,7 +13,32 @@ interface Props {
 }
 
 const ALLOWED = ['image/jpeg', 'image/png', 'image/webp']
+const MAX_INPUT_BYTES = 20 * 1024 * 1024
 const MAX_BYTES = 5 * 1024 * 1024
+const MAX_DIMENSION = 1600
+const WEBP_QUALITY = 0.82
+
+const EXTENSIONS: Record<string, string> = { 'image/webp': 'webp', 'image/png': 'png', 'image/jpeg': 'jpg' }
+
+// Redimensiona a máx. 1600 px por lado y re-codifica a WebP antes de subir: una
+// foto de celular de 4–8 MB queda en unos cientos de KB, sin pérdida visible.
+// Safari no codifica WebP en canvas (devuelve PNG): en ese caso, o si el
+// resultado no pesa menos, se sube el archivo original.
+async function compressImage(file: File): Promise<Blob> {
+  const bitmap = await createImageBitmap(file)
+  const scale = Math.min(1, MAX_DIMENSION / Math.max(bitmap.width, bitmap.height))
+  const width = Math.round(bitmap.width * scale)
+  const height = Math.round(bitmap.height * scale)
+
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  canvas.getContext('2d')?.drawImage(bitmap, 0, 0, width, height)
+  bitmap.close()
+
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/webp', WEBP_QUALITY))
+  return blob && blob.type === 'image/webp' && blob.size < file.size ? blob : file
+}
 
 export function ImageUploader({ value, onChange, hint, size = 'md' }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -26,20 +51,27 @@ export function ImageUploader({ value, onChange, hint, size = 'md' }: Props) {
       setError('Solo JPG, PNG o WebP.')
       return
     }
-    if (file.size > MAX_BYTES) {
-      setError('Máximo 5MB.')
+    if (file.size > MAX_INPUT_BYTES) {
+      setError('Máximo 20MB.')
       return
     }
     setError(null)
     setUploading(true)
 
-    const ext = file.name.split('.').pop() ?? 'jpg'
+    const image = await compressImage(file).catch(() => file)
+    if (image.size > MAX_BYTES) {
+      setError('La imagen sigue pesando más de 5MB después de comprimirla. Prueba con otra.')
+      setUploading(false)
+      return
+    }
+
+    const ext = EXTENSIONS[image.type] ?? 'jpg'
     const path = `products/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
     const supabase = createClient()
     const { error: uploadError } = await supabase.storage
       .from('products')
-      .upload(path, file, { cacheControl: '3600', upsert: false })
+      .upload(path, image, { cacheControl: '31536000', contentType: image.type, upsert: false })
 
     if (uploadError) {
       setError('Error al subir la imagen. Verifica los permisos del bucket.')

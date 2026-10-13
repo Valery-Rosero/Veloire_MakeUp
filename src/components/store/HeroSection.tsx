@@ -64,7 +64,7 @@ function ProductSpotlight({ products }: { products: CarouselProduct[] }) {
               {img ? (
                 <Image
                   src={img.url}
-                  alt={img.alt_text ?? p.name}
+                  alt={img.alt_text || p.name}
                   fill
                   sizes="(max-width: 768px) 100vw, 45vw"
                   className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"

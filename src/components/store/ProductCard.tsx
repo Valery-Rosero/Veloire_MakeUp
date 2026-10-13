@@ -63,7 +63,7 @@ export function ProductCard({
               {imageUrl ? (
                 <Image
                   src={imageUrl}
-                  alt={imageAlt ?? name}
+                  alt={imageAlt || name}
                   fill
                   sizes="50vw"
                   className={`object-cover transition-transform duration-300 group-hover:scale-105 ${isOutOfStock ? 'opacity-60' : ''}`}
@@ -104,7 +104,7 @@ export function ProductCard({
               >
                 <Image
                   src={imageUrl}
-                  alt={imageAlt ?? name}
+                  alt={imageAlt || name}
                   fill
                   sizes="25vw"
                   className="object-cover"
@@ -193,7 +193,7 @@ export function ProductCard({
           {imageUrl ? (
             <Image
               src={imageUrl}
-              alt={imageAlt ?? name}
+              alt={imageAlt || name}
               fill
               sizes="(max-width: 768px) 50vw, 25vw"
               className={`object-cover transition-transform duration-300 group-hover:scale-105 ${isOutOfStock ? 'opacity-60' : ''}`}

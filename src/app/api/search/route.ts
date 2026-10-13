@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
         brand: p.brand,
         category_name: category?.name ?? null,
         image_url: mainImg?.url ?? null,
-        image_alt: mainImg?.alt_text ?? p.name,
+        image_alt: mainImg?.alt_text || p.name,
       }
     })
 

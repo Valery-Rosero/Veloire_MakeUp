@@ -413,7 +413,7 @@ export function ProductForm({ categories, initialData }: Props) {
           <div className="grid grid-cols-4 gap-2">
             {galleryImages.map((img) => (
               <div key={img.url} className="relative aspect-square rounded-xl overflow-hidden border border-rim group">
-                <Image src={img.url} alt="" fill className="object-cover" />
+                <Image src={img.url} alt={img.alt_text || `Foto de galería de ${name}`} fill className="object-cover" />
                 <button
                   type="button"
                   onClick={() => removeImage(img.url)}

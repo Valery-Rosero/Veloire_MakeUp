@@ -108,7 +108,7 @@ function ShadeRow({
           value={shade.imageUrl}
           onChange={(url) => updateShade(productId, shade.id, { imageUrl: url })}
           size="sm"
-          hint="JPG, PNG o WebP · máx. 5MB"
+          hint="JPG, PNG o WebP · se comprime sola al subir"
         />
       </div>
     </div>

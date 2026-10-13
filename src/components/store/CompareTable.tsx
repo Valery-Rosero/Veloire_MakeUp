@@ -75,7 +75,7 @@ export function CompareTable() {
                       {mainImage && (
                         <Image
                           src={mainImage.url}
-                          alt={mainImage.alt_text ?? p.name}
+                          alt={mainImage.alt_text || p.name}
                           fill
                           sizes="160px"
                           className="object-cover"

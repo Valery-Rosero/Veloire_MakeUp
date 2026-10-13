@@ -145,7 +145,7 @@ function HeroProductCard({ product, index }: { product: FeaturedProduct; index: 
         <div className="absolute inset-0">
           <Image
             src={mainImage.url}
-            alt={mainImage.alt_text ?? product.name}
+            alt={mainImage.alt_text || product.name}
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
             className="object-cover opacity-40 transition-transform duration-500 group-hover:scale-[1.03]"

@@ -88,7 +88,7 @@ export function NewArrivalsCarousel({ products }: { products: CarouselProduct[] 
                   {mainImage ? (
                     <Image
                       src={mainImage.url}
-                      alt={mainImage.alt_text ?? product.name}
+                      alt={mainImage.alt_text || product.name}
                       fill
                       sizes="(max-width: 640px) 68vw, (max-width: 768px) 224px, (max-width: 1024px) 240px, 256px"
                       className="object-cover transition-transform duration-500 group-hover:scale-105"

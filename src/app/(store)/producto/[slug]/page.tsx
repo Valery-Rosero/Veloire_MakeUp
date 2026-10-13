@@ -132,7 +132,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       type: 'website',
       ...(mainImage
-        ? { images: [{ url: mainImage.url, alt: mainImage.alt_text ?? product.name }] }
+        ? { images: [{ url: mainImage.url, alt: mainImage.alt_text || product.name }] }
         : {}),
     },
   }

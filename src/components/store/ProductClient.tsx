@@ -143,7 +143,7 @@ export function ProductClient({ product }: ProductClientProps) {
                   <button
                     key={img.url}
                     onClick={() => setActiveUrl(img.url)}
-                    aria-label={img.alt_text ?? product.name}
+                    aria-label={img.alt_text || product.name}
                     aria-pressed={isActive}
                     className="relative w-12 h-12 rounded-lg overflow-hidden border-2 transition-colors duration-150"
                     style={{
@@ -152,7 +152,7 @@ export function ProductClient({ product }: ProductClientProps) {
                   >
                     <Image
                       src={img.url}
-                      alt={img.alt_text ?? product.name}
+                      alt={img.alt_text || product.name}
                       fill
                       sizes="48px"
                       className="object-cover"

@@ -216,7 +216,7 @@ export function SearchOverlay({ open, onClose }: Props) {
                               {r.image_url ? (
                                 <Image
                                   src={r.image_url}
-                                  alt={r.image_alt ?? r.name}
+                                  alt={r.image_alt || r.name}
                                   fill
                                   sizes="56px"
                                   className="object-cover"

@@ -99,7 +99,7 @@ export default async function EditarProductoPage({ params }: PageProps) {
       .sort((a, b) => a.sort_order - b.sort_order)
       .map((img) => ({
         url: img.url,
-        alt_text: img.alt_text ?? '',
+        alt_text: img.alt_text || '',
         is_main: img.is_main,
         sort_order: img.sort_order,
       })),

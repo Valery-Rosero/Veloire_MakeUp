@@ -70,7 +70,7 @@ export function ProductGallery({ images, shadeImageUrl, productName, dark = fals
               <button
                 key={img.url}
                 onClick={() => setActiveUrl(img.url)}
-                aria-label={img.alt_text ?? productName}
+                aria-label={img.alt_text || productName}
                 aria-pressed={isActive}
                 className={`relative w-14 h-14 rounded-lg overflow-hidden border-2 transition-colors duration-150 ${
                   isActive ? thumbActiveBorder : thumbInactiveBorder
@@ -78,7 +78,7 @@ export function ProductGallery({ images, shadeImageUrl, productName, dark = fals
               >
                 <Image
                   src={img.url}
-                  alt={img.alt_text ?? productName}
+                  alt={img.alt_text || productName}
                   fill
                   sizes="56px"
                   className="object-cover"
