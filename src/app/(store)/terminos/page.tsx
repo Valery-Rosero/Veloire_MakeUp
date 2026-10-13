@@ -53,10 +53,7 @@ export default function TerminosPage() {
             automáticamente y los productos vuelven a estar disponibles.
           </li>
           <li>Tu pedido se confirma cuando verificamos el pago; te avisamos por correo.</li>
-          <li>
-            Aceptamos transferencia por Nequi y Bancolombia, y efectivo contra entrega dentro de Pasto
-            (coordinado por WhatsApp).
-          </li>
+          <li>Aceptamos pagos por transferencia a Nequi o Bancolombia.</li>
         </ul>
       </LegalSection>
 

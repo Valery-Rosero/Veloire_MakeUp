@@ -10,7 +10,7 @@ type Db = SupabaseClient<Database>
 export const PAYMENT_WINDOW_HOURS = 24
 export const PAYMENT_WINDOW = `${PAYMENT_WINDOW_HOURS} hours`
 
-export type PaymentMethod = 'nequi' | 'bancolombia' | 'efectivo'
+export type PaymentMethod = 'nequi' | 'bancolombia'
 
 export interface OrderLine {
   shadeId: string

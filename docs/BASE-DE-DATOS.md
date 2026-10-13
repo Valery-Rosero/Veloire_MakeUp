@@ -171,7 +171,7 @@ Pedidos de la tienda.
 | `city` | text | Ciudad (Pasto) |
 | `department` | text | Departamento (Nariño) |
 | `notes` | text | Notas adicionales del cliente |
-| `payment_method` | text | `'nequi'`, `'bancolombia'`, `'efectivo'` |
+| `payment_method` | text | `'nequi'`, `'bancolombia'` (el efectivo se retiró el 2026-10-12) |
 | `subtotal` | numeric | Total sin domicilio |
 | `delivery_fee` | numeric | Costo de domicilio |
 | `total` | numeric | `subtotal + delivery_fee` |

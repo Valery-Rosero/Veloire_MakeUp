@@ -40,17 +40,11 @@ const PAYMENT_METHODS = [
     color: '#FDB913',
     bg: '#fffbeb',
   },
-  {
-    name: 'Efectivo',
-    desc: 'Pago contra entrega. Disponible para domicilios dentro de Pasto.',
-    color: '#1D9E75',
-    bg: '#edfaf5',
-  },
 ]
 
 const STEPS = [
   { icon: Package,      label: 'Haces tu pedido',       desc: 'Elige tus productos y completa el formulario de envío.' },
-  { icon: CreditCard,   label: 'Realizas el pago',       desc: 'Transferes por Nequi, Bancolombia o pagas en efectivo al recibir.' },
+  { icon: CreditCard,   label: 'Realizas el pago',       desc: 'Transfieres por Nequi o Bancolombia.' },
   { icon: CheckCircle,  label: 'Confirmamos',             desc: 'Verificamos tu pago y preparamos tu pedido.' },
   { icon: MapPin,       label: 'Te lo llevamos',          desc: 'Domicilio a tu dirección en Pasto en 1 a 2 días hábiles.' },
 ]
@@ -177,7 +171,7 @@ export default async function EnviosPage() {
             <h2 className="font-display text-2xl text-fg">Métodos de pago</h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
             {PAYMENT_METHODS.map(({ name, desc, color, bg }) => (
               <div key={name} className="bg-card border border-rim rounded-2xl p-6">
                 <div

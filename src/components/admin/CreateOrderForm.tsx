@@ -6,6 +6,7 @@ import { Plus, Minus, Trash2, Check } from 'lucide-react'
 import { formatPrice } from '@/lib/format'
 import { createAdminOrder } from '@/app/admin/pedidos/nuevo/actions'
 import type { AdminOrderItem } from '@/app/admin/pedidos/nuevo/actions'
+import type { PaymentMethod } from '@/lib/orders'
 
 interface Shade {
   id: string
@@ -22,10 +23,9 @@ export interface ProductOption {
   shades: Shade[]
 }
 
-const PAYMENT_OPTIONS = [
-  { value: 'nequi' as const, label: 'Nequi' },
-  { value: 'bancolombia' as const, label: 'Bancolombia' },
-  { value: 'efectivo' as const, label: 'Efectivo' },
+const PAYMENT_OPTIONS: Array<{ value: PaymentMethod; label: string }> = [
+  { value: 'nequi', label: 'Nequi' },
+  { value: 'bancolombia', label: 'Bancolombia' },
 ]
 
 const inputCls =
@@ -58,7 +58,7 @@ export function CreateOrderForm({
   const [city, setCity] = useState('Pasto')
   const [department, setDepartment] = useState('Nariño')
   const [notes, setNotes] = useState('')
-  const [paymentMethod, setPaymentMethod] = useState<'nequi' | 'bancolombia' | 'efectivo'>('nequi')
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('nequi')
 
   const [error, setError] = useState<string | null>(null)
 

@@ -63,9 +63,8 @@ Estado: **En desarrollo activo**. El core de la tienda y el panel admin están o
 - Paso 1: Formulario de datos de envío (nombre, email, teléfono, dirección, barrio, notas)
   - Pre-llenado con datos del perfil del usuario
   - Validación en tiempo real con Zod
-- Paso 2: Instrucciones de pago
-  - Métodos: Nequi, Bancolombia, Efectivo
-  - Número de Nequi/cuenta con botón CopyButton
+- Paso 2: Instrucciones de pago por Nequi (el checkout web siempre crea el pedido como `nequi`; Bancolombia solo existe en pedidos manuales del admin)
+  - Número de Nequi con botón CopyButton
   - Aviso de que los productos quedan apartados 24 h
   - Botón "Ya realicé el pago" que llama a `POST /api/orders`
 - Al crear el pedido (`create_order` en Supabase, vía `src/lib/orders.ts`): aparta el stock en la misma transacción que crea el pedido — si dos clientas compran la última unidad a la vez, solo una lo logra y la otra recibe "ya no está disponible". Del carrito solo se usan tono y cantidad: precio, nombre e imagen salen de la base de datos (no se pueden manipular desde el navegador). Luego limpia el carrito
@@ -99,7 +98,7 @@ Estado: **En desarrollo activo**. El core de la tienda y el panel admin están o
 - Fetcha `delivery_fee` de `store_config` (default 5 000 COP)
 - Cobertura: Pasto, Nariño — 1 a 2 días hábiles
 - Proceso en 4 pasos: pedido → pago → confirmación → entrega
-- Métodos de pago con colores de marca (Nequi, Bancolombia, Efectivo)
+- Métodos de pago con colores de marca (Nequi, Bancolombia). El efectivo contra entrega se retiró el 2026-10-12
 - Política de devoluciones (ventana de 24 h, excepción por higiene)
 
 ### Privacidad y términos (`/privacidad`, `/terminos`)
