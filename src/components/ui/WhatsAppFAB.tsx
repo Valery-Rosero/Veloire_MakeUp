@@ -17,7 +17,7 @@ export function WhatsAppFAB({ phone, message }: Props) {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chatear por WhatsApp"
-      className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-transform duration-200"
+      className="wa-fab fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-transform duration-200"
       style={{ backgroundColor: '#25D366' }}
     >
       <svg viewBox="0 0 24 24" fill="white" className="w-7 h-7">

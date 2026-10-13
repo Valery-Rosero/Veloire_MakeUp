@@ -167,6 +167,7 @@ export function ProductActions({
 
       {/* Sticky mobile add-to-cart bar */}
       <div
+        data-sticky-cart-bar
         className="md:hidden fixed bottom-0 inset-x-0 z-30 border-t border-white/10"
         style={{ backgroundColor: '#1a1a1a' }}
       >
@@ -217,13 +218,13 @@ export function ProductActions({
       <AnimatePresence>
         {toastMsg && (
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 40 }}
+            exit={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
+            className="fixed top-20 md:top-auto md:bottom-6 inset-x-4 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 z-50 pointer-events-none flex justify-center"
           >
-            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-fg text-card text-sm font-body shadow-lg whitespace-nowrap">
+            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-fg text-card text-sm font-body shadow-lg max-w-full md:whitespace-nowrap">
               <ShoppingBag size={14} className="shrink-0" />
               {toastMsg} añadido
             </div>

@@ -140,3 +140,12 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .float-y { animation: none; }
 }
+
+/* ─── Botón de WhatsApp sobre la barra de "Añadir al carrito" ───
+   En la ficha de producto (móvil) hay una barra fija abajo de 56px: el botón
+   flotante sube para no taparla. :has() lo resuelve sin JS desde el layout. */
+@media (max-width: 767px) {
+  body:has([data-sticky-cart-bar]) .wa-fab {
+    bottom: 5rem;
+  }
+}

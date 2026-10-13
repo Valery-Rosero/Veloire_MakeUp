@@ -122,6 +122,8 @@ El toggle vive en `ThemeProvider` (`src/components/ui/ThemeProvider.tsx`) y escr
 | Entrada de página (`(store)/template.tsx`) | Fundido de 0,35 s en cada navegación, con CSS puro (`.page-enter` en `globals.css`). **Solo opacity**: un `transform` volvería al contenedor el ancla de los `position: fixed` de la página. Filtrar el catálogo no remonta el template, así que el reacomodo de tarjetas sigue funcionando. |
 | 404 (`app/not-found.tsx`) | El título entra con `MaskLine` y los círculos del hero flotan detrás (`.float-y`, CSS puro). Se achican en celular para no tapar el texto. |
 
+Detalles de convivencia en móvil (ficha de producto): el aviso de "añadido" sale arriba, bajo el header, y el botón de WhatsApp sube sobre la barra fija de "Añadir al carrito" (`body:has([data-sticky-cart-bar]) .wa-fab` en `globals.css`).
+
 ---
 
 ## Componentes UI primitivos
