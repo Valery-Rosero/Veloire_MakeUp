@@ -168,10 +168,7 @@ export default async function CatalogoPage({ searchParams }: PageProps) {
       <hr className="border-rim my-6" />
 
       {/* Grid con animaciones */}
-      <ProductGrid
-        products={products}
-        filterKey={`${categoria ?? 'all'}-${orden ?? 'new'}-${page}`}
-      />
+      <ProductGrid products={products} />
 
       {/* Paginación */}
       {totalPages > 1 && (

@@ -1,7 +1,8 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState, useRef } from 'react'
+import { useState, useRef, useId, useOptimistic, useTransition } from 'react'
+import { motion } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
 import { useClickOutside } from '@/hooks/useClickOutside'
 import { buildCatalogoUrl } from '@/lib/catalogo'
@@ -28,6 +29,11 @@ const SORT_OPTIONS = [
 export function CatalogoFilters({ categories, activeCategory, activeOrder }: CatalogoFiltersProps) {
   const router = useRouter()
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const pillId = useId()
+  // La píldora se marca al instante al tocarla, sin esperar a que el servidor
+  // devuelva la nueva página (useOptimistic vuelve al valor real al terminar).
+  const [, startTransition] = useTransition()
+  const [shownCategory, setShownCategory] = useOptimistic(activeCategory ?? null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const activeSortLabel =
@@ -36,7 +42,24 @@ export function CatalogoFilters({ categories, activeCategory, activeOrder }: Cat
   useClickOutside(dropdownRef, () => setDropdownOpen(false))
 
   function setCategory(slug: string | null) {
-    router.push(buildCatalogoUrl({ categoria: slug, orden: activeOrder }))
+    startTransition(() => {
+      setShownCategory(slug)
+      router.push(buildCatalogoUrl({ categoria: slug, orden: activeOrder }))
+    })
+  }
+
+  // Fondo negro de la píldora activa: es un solo elemento (layoutId) que se
+  // desliza de una píldora a otra en vez de apagarse en una y prenderse en otra.
+  function activeBackground(isActive: boolean) {
+    if (!isActive) return null
+    return (
+      <motion.span
+        layoutId={`${pillId}-active`}
+        className="absolute inset-0 rounded-full bg-noir"
+        transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+        aria-hidden
+      />
+    )
   }
 
   function setOrder(value: string) {
@@ -51,25 +74,25 @@ export function CatalogoFilters({ categories, activeCategory, activeOrder }: Cat
         <div className="flex gap-2 pb-0.5 w-max">
           <button
             onClick={() => setCategory(null)}
-            className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-body font-medium transition-colors duration-150 ${
-              !activeCategory
-                ? 'bg-noir text-beige'
-                : 'bg-highlight text-fg-2 hover:bg-noir hover:text-beige'
+            aria-pressed={!shownCategory}
+            className={`relative shrink-0 px-4 py-1.5 rounded-full text-sm font-body font-medium transition-colors duration-150 ${
+              !shownCategory ? 'text-beige' : 'bg-highlight text-fg-2 hover:bg-noir hover:text-beige'
             }`}
           >
-            Todos
+            {activeBackground(!shownCategory)}
+            <span className="relative">Todos</span>
           </button>
           {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setCategory(cat.slug)}
-              className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-body font-medium transition-colors duration-150 ${
-                activeCategory === cat.slug
-                  ? 'bg-noir text-beige'
-                  : 'bg-highlight text-fg-2 hover:bg-noir hover:text-beige'
+              aria-pressed={shownCategory === cat.slug}
+              className={`relative shrink-0 px-4 py-1.5 rounded-full text-sm font-body font-medium transition-colors duration-150 ${
+                shownCategory === cat.slug ? 'text-beige' : 'bg-highlight text-fg-2 hover:bg-noir hover:text-beige'
               }`}
             >
-              {cat.name}
+              {activeBackground(shownCategory === cat.slug)}
+              <span className="relative">{cat.name}</span>
             </button>
           ))}
         </div>

@@ -146,3 +146,31 @@ export function RevealItem({ variant = 'up', as = 'div', className, style, child
     </Component>
   )
 }
+
+interface MaskLineProps {
+  children: React.ReactNode
+  /** Retraso en segundos (para escalonar varias líneas). */
+  delay?: number
+  className?: string
+}
+
+/**
+ * Línea de título que sube desde abajo de su propio recorte, como si saliera
+ * de detrás de una cortina. Anima al montar: pensada para títulos que ya se
+ * ven al cargar la página. El padding compensa las letras que bajan de la
+ * línea (y, q, j) y las cursivas, que el overflow-hidden cortaría.
+ */
+export function MaskLine({ children, delay = 0, className = '' }: MaskLineProps) {
+  return (
+    <span className={`block overflow-hidden pb-[0.12em] -mb-[0.12em] pr-[0.12em] -mr-[0.12em] ${className}`}>
+      <motion.span
+        className="block"
+        initial={{ y: '110%' }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.8, ease: EASE, delay }}
+      >
+        {children}
+      </motion.span>
+    </span>
+  )
+}

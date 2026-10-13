@@ -5,6 +5,7 @@ import { createPublicClient } from '@/lib/supabase/server'
 import type { ProductDetail, Review } from '@/types/product'
 import { ProductClient } from '@/components/store/ProductClient'
 import { ProductCard } from '@/components/store/ProductCard'
+import { SectionHeading } from '@/components/ui/SectionHeading'
 import { ReviewsSection } from '@/components/store/ReviewsSection'
 
 // Página estática + ISR: ninguno de los fetchers de acá lee cookies/headers,
@@ -205,10 +206,7 @@ export default async function ProductoPage({ params }: PageProps) {
 
         {related.length > 0 && (
           <section className="max-w-7xl mx-auto px-4 mt-16 md:mt-20 pb-16">
-            <div className="flex items-start gap-4 mb-8">
-              <div className="w-0.5 h-8 bg-accent mt-1 shrink-0" />
-              <h2 className="font-display text-2xl text-fg">También te puede gustar</h2>
-            </div>
+            <SectionHeading title="También te puede gustar" className="mb-8" />
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               {related.map((p, i) => {
                 const mainImg =

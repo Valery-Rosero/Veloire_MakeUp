@@ -106,6 +106,11 @@ El toggle vive en `ThemeProvider` (`src/components/ui/ThemeProvider.tsx`) y escr
 | Destacados (home) | La tarjeta grande se descubre como una cortina que sube (`curtain`) y sus tonos aparecen uno por uno (`pop`). |
 | Franja de beneficios (home) | Ítems escalonados, el ícono hace `pop` y los divisores se dibujan (`growY`). |
 | `ProductCard` | Fade + subida al entrar, escalonado por fila (`index % 4`, máx. 0,18 s). |
+| Nosotras | El título entra con `MaskLine`. Los títulos de sección hacen crecer su barrita fina. Los párrafos de la historia aparecen uno a uno, la "V" de la firma hace `pop`, las tarjetas de valores entran escalonadas con el ícono en `pop`, y el cierre (CTA) sube escalonado. |
+| `CatalogoFilters` | La píldora activa se marca al instante (`useOptimistic` + `startTransition`, sin esperar al servidor) y su fondo negro se desliza a la nueva (`layoutId`). |
+| `ProductGrid` | Al filtrar o reordenar, las tarjetas que siguen se deslizan a su nuevo lugar (`layout="position"`, key = id), las que salen se desvanecen y las nuevas aparecen (`AnimatePresence mode="popLayout"`). La pantalla de carga (`loading.tsx`) no aparece al cambiar filtros, así que el reacomodo sí se ve. |
+| `ShadeSelector` | El anillo del tono elegido es un solo elemento (`layoutId` único por selector) que se desliza de un tono al otro. |
+| "También te puede gustar" (producto) | `SectionHeading` + las tarjetas entran al hacer scroll. |
 | `CompareTray` / `CompareModal` | La barra sube desde abajo y se sacude si se pasa del máximo. La ventana sube como hoja en móvil y aparece con escala + fade en desktop. |
 | `CartDrawer` | Slide desde la derecha (`x: '100%' → 0`), hoja desde abajo en móvil |
 | `AdminLayoutShell` | Drawer móvil slide desde la izquierda |
@@ -113,7 +118,7 @@ El toggle vive en `ThemeProvider` (`src/components/ui/ThemeProvider.tsx`) y escr
 | `OrderCheckAnimation` | Animación de check al confirmar pedido |
 | Overlay del drawer | Fade (`bg-black/50`) |
 
-Pendiente (fases 2 y 3 del plan de animaciones): Nosotras, catálogo (reacomodo al filtrar), producto, el punto que vuela al carrito, el header que se esconde en móvil, el fundido entre páginas y la 404.
+Pendiente (fase 3 del plan de animaciones): el punto que vuela al carrito, el header que se esconde en móvil, el fundido entre páginas y la 404.
 
 ---
 

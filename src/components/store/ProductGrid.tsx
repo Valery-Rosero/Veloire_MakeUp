@@ -8,10 +8,14 @@ import type { CatalogoProduct } from '@/types/catalog'
 
 interface ProductGridProps {
   products: CatalogoProduct[]
-  filterKey: string
 }
 
-export function ProductGrid({ products, filterKey }: ProductGridProps) {
+// Cada tarjeta conserva su identidad (key = id del producto), así que al
+// filtrar o reordenar las que siguen en pantalla se deslizan a su nuevo lugar
+// (layout="position"), las que salen se desvanecen y las nuevas aparecen.
+// initial={false}: en la primera carga entran con su propia animación de
+// scroll (ProductCard), no con esta.
+export function ProductGrid({ products }: ProductGridProps) {
   if (products.length === 0) {
     return (
       <div className="py-24 text-center">
@@ -31,22 +35,22 @@ export function ProductGrid({ products, filterKey }: ProductGridProps) {
   }
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={filterKey}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.15 }}
-        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4 lg:gap-6"
-      >
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4 lg:gap-6">
+      <AnimatePresence initial={false} mode="popLayout">
         {products.map((p, i) => {
           const mainImage = p.product_images?.find((img) => img.is_main) ?? p.product_images?.[0]
           const activeShades = p.product_shades?.filter((s) => s.is_active) ?? []
           const totalStock = activeShades.reduce((sum, s) => sum + (s.stock ?? 0), 0)
           return (
-            <ProductCard
+            <motion.div
               key={p.id}
+              layout="position"
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            >
+            <ProductCard
               slug={p.slug}
               name={p.name}
               price={p.price}
@@ -60,9 +64,10 @@ export function ProductGrid({ products, filterKey }: ProductGridProps) {
               productId={p.id}
               categorySlug={p.categories?.slug}
             />
+            </motion.div>
           )
         })}
-      </motion.div>
-    </AnimatePresence>
+      </AnimatePresence>
+    </div>
   )
 }

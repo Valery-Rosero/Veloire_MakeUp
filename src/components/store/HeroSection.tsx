@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { ArrowRight } from 'lucide-react'
 import { motion, AnimatePresence, useReducedMotion, useScroll, useTransform } from 'framer-motion'
 import type { CarouselProduct } from '@/components/store/NewArrivalsCarousel'
+import { MaskLine } from '@/components/ui/Reveal'
 
 // ─── Círculos flotantes ──────────────────────────────────────────────────────
 
@@ -23,24 +24,6 @@ const CIRCLES = [
 
 const EASE_OUT = [0.22, 1, 0.36, 1] as const
 const TITLE_DELAYS = [0.1, 0.22, 0.34]
-
-// Cada línea del título sube desde abajo de su propio recorte, como si saliera
-// de detrás de una cortina. El padding compensa las letras que bajan de la
-// línea (y, q) y la cursiva de "tú", que el overflow-hidden cortaría.
-function MaskLine({ children, delay, className = '' }: { children: React.ReactNode; delay: number; className?: string }) {
-  return (
-    <span className={`block overflow-hidden pb-[0.12em] -mb-[0.12em] pr-[0.12em] -mr-[0.12em] ${className}`}>
-      <motion.span
-        className="block"
-        initial={{ y: '110%' }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.8, ease: EASE_OUT, delay }}
-      >
-        {children}
-      </motion.span>
-    </span>
-  )
-}
 
 function FadeUp({ children, delay, className }: { children: React.ReactNode; delay: number; className?: string }) {
   return (

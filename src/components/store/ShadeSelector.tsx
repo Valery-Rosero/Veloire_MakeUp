@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { ProductShade } from '@/types/product'
 
@@ -16,9 +16,11 @@ interface ShadeCircleProps {
   shade: ProductShade
   isSelected: boolean
   onSelect: (shade: ProductShade) => void
+  /** layoutId compartido del anillo de selección (único por selector). */
+  ringId: string
 }
 
-function ShadeCircle({ shade, isSelected, onSelect }: ShadeCircleProps) {
+function ShadeCircle({ shade, isSelected, onSelect, ringId }: ShadeCircleProps) {
   const [hovered, setHovered] = useState(false)
   const isOutOfStock = shade.stock === 0
 
@@ -38,12 +40,7 @@ function ShadeCircle({ shade, isSelected, onSelect }: ShadeCircleProps) {
         className={`relative w-9 h-9 rounded-full transition-opacity duration-150 ${
           isOutOfStock ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
         }`}
-        style={{
-          backgroundColor: shade.hex_color,
-          boxShadow: isSelected
-            ? '0 0 0 2.5px var(--bg-card), 0 0 0 4.5px var(--accent-rose)'
-            : undefined,
-        }}
+        style={{ backgroundColor: shade.hex_color }}
       >
         {/* Agotado diagonal line */}
         {isOutOfStock && (
@@ -55,6 +52,19 @@ function ShadeCircle({ shade, isSelected, onSelect }: ShadeCircleProps) {
           </span>
         )}
       </motion.button>
+
+      {/* Anillo de selección: un solo elemento (layoutId) que se desliza de un
+          tono al otro. Queda 2.5px por fuera del círculo y deja ver el fondo
+          en medio, igual que el anillo doble que había antes. */}
+      {isSelected && (
+        <motion.span
+          layoutId={ringId}
+          className="absolute -inset-[4.5px] rounded-full pointer-events-none"
+          style={{ boxShadow: 'inset 0 0 0 2px var(--accent-rose)' }}
+          transition={{ type: 'spring', stiffness: 500, damping: 36 }}
+          aria-hidden
+        />
+      )}
 
       {/* Tooltip */}
       <AnimatePresence>
@@ -81,6 +91,7 @@ function ShadeCircle({ shade, isSelected, onSelect }: ShadeCircleProps) {
 
 export function ShadeSelector({ shades, selectedShade, onSelect }: ShadeSelectorProps) {
   const [expanded, setExpanded] = useState(false)
+  const ringId = `shade-ring-${useId()}`
 
   const visible = expanded ? shades : shades.slice(0, SHADE_LIMIT)
   const hiddenCount = shades.length - SHADE_LIMIT
@@ -94,6 +105,7 @@ export function ShadeSelector({ shades, selectedShade, onSelect }: ShadeSelector
           shade={shade}
           isSelected={selectedShade?.id === shade.id}
           onSelect={onSelect}
+          ringId={ringId}
         />
       ))}
 
