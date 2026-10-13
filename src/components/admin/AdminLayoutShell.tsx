@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { AdminSidebar } from './AdminSidebar'
 import { AdminMobileHeader } from './AdminMobileHeader'
+import { AdminRail } from './AdminRail'
 import { createClient } from '@/lib/supabase/client'
 
 interface Props {
@@ -47,6 +48,21 @@ export function AdminLayoutShell({ children, userEmail, userName, userRole }: Pr
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
+  // Cajón abierto: Esc lo cierra y la página de fondo no se desplaza.
+  useEffect(() => {
+    if (!drawerOpen) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setDrawerOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [drawerOpen])
+
   async function handleSignOut() {
     setShowLeaveModal(false)
     const supabase = createClient()
@@ -61,9 +77,14 @@ export function AdminLayoutShell({ children, userEmail, userName, userRole }: Pr
 
   return (
     <div className="min-h-screen flex bg-alt">
-      {/* Desktop sidebar — always visible */}
+      {/* Desktop (lg+): barra lateral completa, siempre visible */}
       <div className="hidden lg:block shrink-0">
         <AdminSidebar userEmail={userEmail} userName={userName} userRole={userRole} />
+      </div>
+
+      {/* Tablet (md–lg): riel de íconos; el menú completo se abre como cajón */}
+      <div className="hidden md:block lg:hidden shrink-0">
+        <AdminRail userName={userName} userRole={userRole} onExpand={() => setDrawerOpen(true)} />
       </div>
 
       {/* Mobile drawer */}
@@ -72,7 +93,7 @@ export function AdminLayoutShell({ children, userEmail, userName, userRole }: Pr
           <>
             <motion.div
               key="overlay"
-              className="lg:hidden fixed inset-0 z-50 bg-black/50"
+              className="lg:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -80,11 +101,11 @@ export function AdminLayoutShell({ children, userEmail, userName, userRole }: Pr
             />
             <motion.div
               key="drawer"
-              className="lg:hidden fixed left-0 top-0 bottom-0 z-[60]"
+              className="lg:hidden fixed left-0 top-0 bottom-0 z-[60] rounded-r-2xl overflow-hidden shadow-2xl"
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
-              transition={{ type: 'tween', duration: 0.22 }}
+              transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
             >
               <AdminSidebar
                 userEmail={userEmail}
@@ -99,8 +120,9 @@ export function AdminLayoutShell({ children, userEmail, userName, userRole }: Pr
 
       {/* Main area */}
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="lg:hidden">
-          <AdminMobileHeader onMenuClick={() => setDrawerOpen(true)} />
+        {/* Celular (< md): barra superior */}
+        <div className="md:hidden">
+          <AdminMobileHeader onMenuClick={() => setDrawerOpen(true)} userName={userName} />
         </div>
         <main className="flex-1 p-5 lg:p-10">{children}</main>
       </div>

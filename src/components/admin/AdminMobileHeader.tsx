@@ -3,51 +3,55 @@
 import { usePathname } from 'next/navigation'
 import { Menu, Sun, Moon } from 'lucide-react'
 import { useTheme } from '@/components/ui/ThemeProvider'
-
-const SECTION_TITLES: Array<{ prefix: string; label: string; exact?: boolean }> = [
-  { prefix: '/admin', label: 'Dashboard', exact: true },
-  { prefix: '/admin/pedidos', label: 'Pedidos' },
-  { prefix: '/admin/productos', label: 'Productos' },
-  { prefix: '/admin/categorias', label: 'Categorías' },
-  { prefix: '/admin/inventario', label: 'Inventario' },
-  { prefix: '/admin/configuracion', label: 'Configuración' },
-]
-
-function getTitle(pathname: string): string {
-  const exact = SECTION_TITLES.find((s) => s.exact && s.prefix === pathname)
-  if (exact) return exact.label
-  const prefix = SECTION_TITLES.find((s) => !s.exact && pathname.startsWith(s.prefix))
-  return prefix?.label ?? 'Admin'
-}
+import { ACCENT_STRIPE, AVATAR_GRADIENT } from '@/components/ui/brand'
+import { sectionTitle, initialsOf } from './admin-nav'
 
 interface Props {
   onMenuClick: () => void
+  userName: string | null
 }
 
-export function AdminMobileHeader({ onMenuClick }: Props) {
+// Celular: barra superior con el mismo estilo del sidebar. El título sale del
+// menú compartido (admin-nav), así que nunca queda desactualizado.
+export function AdminMobileHeader({ onMenuClick, userName }: Props) {
   const pathname = usePathname()
   const { resolvedTheme, setTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+  const btn = 'w-10 h-10 rounded-xl flex items-center justify-center transition-colors'
+
   return (
-    <header className="sticky top-0 z-40 bg-card border-b border-rim px-4 h-14 flex items-center justify-between">
-      <button
-        onClick={onMenuClick}
-        aria-label="Abrir menú"
-        className="p-2 -ml-2 rounded-lg text-fg-2 hover:text-fg hover:bg-highlight transition-colors"
-      >
-        <Menu size={20} />
-      </button>
+    <header className="sticky top-0 z-40 bg-card/90 backdrop-blur-md border-b border-rim">
+      <div aria-hidden style={{ height: 2, background: ACCENT_STRIPE }} />
+      <div className="relative h-14 px-3 flex items-center justify-between">
+        <button onClick={onMenuClick} aria-label="Abrir menú" className={`${btn} text-fg-2 hover:text-accent hover:bg-highlight`}>
+          <Menu size={20} strokeWidth={1.6} />
+        </button>
 
-      <div className="absolute left-1/2 -translate-x-1/2 text-center">
-        <span className="font-display text-base text-fg">{getTitle(pathname)}</span>
+        <div className="absolute left-1/2 -translate-x-1/2 text-center pointer-events-none">
+          <span className="block font-body text-[8px] uppercase tracking-[0.4em] leading-none" style={{ color: '#a56583' }}>
+            Vèloire
+          </span>
+          <span className="block font-display text-lg text-fg leading-tight mt-0.5">{sectionTitle(pathname)}</span>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setTheme(isDark ? 'light' : 'dark')}
+            aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+            className={`${btn} bg-alt text-accent hover:bg-highlight`}
+          >
+            {isDark ? <Sun size={17} strokeWidth={1.8} /> : <Moon size={17} strokeWidth={1.8} />}
+          </button>
+          <button
+            onClick={onMenuClick}
+            aria-label="Mi cuenta y menú"
+            className="w-9 h-9 rounded-full flex items-center justify-center shadow-sm"
+            style={{ background: AVATAR_GRADIENT }}
+          >
+            <span className="font-body text-[11px] font-semibold text-white">{initialsOf(userName ?? 'Administradora')}</span>
+          </button>
+        </div>
       </div>
-
-      <button
-        onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-        aria-label="Cambiar tema"
-        className="p-2 -mr-2 rounded-lg text-fg-2 hover:text-fg hover:bg-highlight transition-colors"
-      >
-        {resolvedTheme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-      </button>
     </header>
   )
 }
