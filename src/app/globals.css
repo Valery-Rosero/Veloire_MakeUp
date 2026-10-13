@@ -112,3 +112,31 @@ body {
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
 }
+
+/* ─── Entrada de página ───
+   (store)/template.tsx se vuelve a montar en cada navegación y reproduce esta
+   animación. Es CSS puro (corre aunque el JS no haya cargado) y solo anima
+   opacity: un transform convertiría al contenedor en el ancla de los
+   elementos `position: fixed` de la página (barra de "Añadir al carrito"). */
+@keyframes page-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.page-enter {
+  animation: page-in 0.35s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-enter { animation: none; }
+}
+
+/* ─── Círculos flotantes (404) ─── */
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(var(--float, -12px)); }
+}
+.float-y {
+  animation: float-y var(--dur, 4s) ease-in-out var(--delay, 0s) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .float-y { animation: none; }
+}

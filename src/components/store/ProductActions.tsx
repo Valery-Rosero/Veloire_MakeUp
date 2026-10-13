@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Minus, Plus, ShoppingBag } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCartStore } from '@/lib/store/cart'
+import { flyToCart } from '@/lib/fly-to-cart'
 import type { ProductShade } from '@/types/product'
 
 interface ProductActionsProps {
@@ -43,8 +44,10 @@ export function ProductActions({
     }
   }
 
-  function handleAdd() {
+  function handleAdd(e: React.MouseEvent<HTMLButtonElement>) {
     if (!selectedShade || outOfStock) return
+
+    flyToCart(e.currentTarget.getBoundingClientRect(), selectedShade.hex_color)
 
     addItem({
       productId,

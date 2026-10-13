@@ -117,8 +117,10 @@ El toggle vive en `ThemeProvider` (`src/components/ui/ThemeProvider.tsx`) y escr
 | Modal de salida admin | Scale + fade |
 | `OrderCheckAnimation` | Animación de check al confirmar pedido |
 | Overlay del drawer | Fade (`bg-black/50`) |
-
-Pendiente (fase 3 del plan de animaciones): el punto que vuela al carrito, el header que se esconde en móvil, el fundido entre páginas y la 404.
+| Agregar al carrito (`src/lib/fly-to-cart.ts`) | Un punto del color del tono sale del botón, hace un arco y cae en el ícono del carrito (`data-cart-icon`), que rebota. Va fuera de React (Web Animations API), no deja nada en el DOM al terminar y no corre con "reducir movimiento". Si el header está escondido (móvil), le pide volver con el evento `veloire:show-header`. |
+| `Header` (móvil) | Se esconde al bajar y vuelve apenas se sube (umbral de 8px, siempre visible en los primeros 80px). No se esconde con el menú o la búsqueda abiertos, y vuelve si se llega con Tab. En desktop no se mueve. |
+| Entrada de página (`(store)/template.tsx`) | Fundido de 0,35 s en cada navegación, con CSS puro (`.page-enter` en `globals.css`). **Solo opacity**: un `transform` volvería al contenedor el ancla de los `position: fixed` de la página. Filtrar el catálogo no remonta el template, así que el reacomodo de tarjetas sigue funcionando. |
+| 404 (`app/not-found.tsx`) | El título entra con `MaskLine` y los círculos del hero flotan detrás (`.float-y`, CSS puro). Se achican en celular para no tapar el texto. |
 
 ---
 

@@ -8,6 +8,7 @@ import { ShoppingBag, Search, User, Sun, Moon, Menu, X } from 'lucide-react'
 import { useCartStore } from '@/lib/store/cart'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SearchOverlay } from '@/components/store/SearchOverlay'
+import { SHOW_HEADER_EVENT } from '@/lib/fly-to-cart'
 
 const NAV_LINKS = [
   { label: 'Catálogo',       href: '/catalogo' },
@@ -85,10 +86,33 @@ export function Header() {
     prevCountRef.current = itemCount
   }, [itemCount])
 
+  // En móvil el header se esconde al bajar (más pantalla para los productos)
+  // y vuelve apenas se sube un poco. Solo cuenta un movimiento de más de 8px
+  // para no titilar con el temblor del dedo; cerca del tope siempre se ve.
+  const [hidden, setHidden] = useState(false)
+  const lastYRef = useRef(0)
+
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12)
+    const onScroll = () => {
+      const y = window.scrollY
+      setScrolled(y > 12)
+      const delta = y - lastYRef.current
+      if (y < 80) {
+        setHidden(false)
+        lastYRef.current = y
+      } else if (Math.abs(delta) > 8) {
+        setHidden(delta > 0)
+        lastYRef.current = y
+      }
+    }
+    // El puntito que vuela al carrito necesita el header a la vista.
+    const onShow = () => setHidden(false)
     window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+    window.addEventListener(SHOW_HEADER_EVENT, onShow)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener(SHOW_HEADER_EVENT, onShow)
+    }
   }, [])
 
   // Bloquear scroll del body cuando el menú está abierto
@@ -121,7 +145,11 @@ export function Header() {
     <>
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
       <header
+        // Si se llega al header con el teclado (Tab) estando escondido, vuelve.
+        onFocus={() => setHidden(false)}
         className={`sticky top-0 z-40 transition-all duration-300 border-b ${
+          hidden && !menuOpen && !searchOpen ? 'max-md:-translate-y-full' : ''
+        } ${
           scrolled
             ? 'bg-alt/92 backdrop-blur-md border-[#d9bfb0] dark:border-rim shadow-[0_4px_24px_rgba(0,0,0,0.08)]'
             : 'bg-alt border-[#e8d0c0] dark:border-rim/60'
@@ -153,7 +181,7 @@ export function Header() {
               >
                 <Search size={18} strokeWidth={1.5} />
               </button>
-              <button onClick={openDrawer} aria-label="Abrir carrito" className="relative w-10 h-10 flex items-center justify-center text-fg-2 hover:text-fg transition-colors">
+              <button onClick={openDrawer} aria-label="Abrir carrito" data-cart-icon className="relative w-10 h-10 flex items-center justify-center text-fg-2 hover:text-fg transition-colors">
                 <ShoppingBag size={18} strokeWidth={1.5} />
                 {badge}
               </button>
@@ -203,7 +231,7 @@ export function Header() {
               <Link href="/cuenta" aria-label="Mi cuenta" className={iconClass}>
                 <User size={15} strokeWidth={1.5} />
               </Link>
-              <button onClick={openDrawer} aria-label="Abrir carrito" className={`relative ${iconClass}`}>
+              <button onClick={openDrawer} aria-label="Abrir carrito" data-cart-icon className={`relative ${iconClass}`}>
                 <ShoppingBag size={15} strokeWidth={1.5} />
                 {badge}
               </button>
