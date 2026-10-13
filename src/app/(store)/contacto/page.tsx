@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { Mail, Clock, MapPin } from 'lucide-react'
 
 export const metadata: Metadata = {
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 async function getContactConfig(): Promise<{ whatsapp: string; instagram: string | null; email: string }> {
   try {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
     const { data } = await supabase
       .from('store_config')
       .select('key, value')

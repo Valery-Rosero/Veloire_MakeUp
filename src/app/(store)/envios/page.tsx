@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { MapPin, Clock, CreditCard, Package, CheckCircle } from 'lucide-react'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
   title: 'Política de envíos',
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 async function getDeliveryFee(): Promise<number> {
   try {
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
     const { data } = await supabase
       .from('store_config')
       .select('value')

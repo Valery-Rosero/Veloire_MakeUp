@@ -13,6 +13,7 @@ export function revalidateCatalog() {
   // la siguiente visita con un cache miss. El single-arg revalidateTag(tag)
   // está deprecado desde Next 16.
   revalidateTag('products', 'max')
+  revalidatePath('/')
   revalidatePath('/catalogo')
   revalidatePath('/(store)/producto/[slug]', 'page')
 }

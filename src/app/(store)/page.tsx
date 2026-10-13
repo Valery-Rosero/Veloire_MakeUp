@@ -1,12 +1,17 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Bike, Smartphone, Palette, MessageCircle } from 'lucide-react'
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/server'
 import { ProductCard } from '@/components/store/ProductCard'
 import { HeroSection } from '@/components/store/HeroSection'
 import { FaceMap } from '@/components/store/FaceMap'
 import { ShadeWall, type ShadeWallItem } from '@/components/store/ShadeWall'
 import { type CarouselProduct } from '@/components/store/NewArrivalsCarousel'
+
+// Home estática + ISR: lee solo datos públicos con createPublicClient (sin
+// cookies), así Next la sirve ya armada en vez de consultar Supabase en cada
+// visita. revalidateCatalog() la refresca al cambiar productos o stock.
+export const revalidate = 60
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -33,7 +38,7 @@ interface FeaturedProduct {
 
 async function getCategories(): Promise<Category[]> {
   try {
-    const supabase = await createClient()
+    const supabase = createPublicClient()
     const { data } = await supabase
       .from('categories')
       .select('id, name, slug, sort_order, face_region')
@@ -47,7 +52,7 @@ async function getCategories(): Promise<Category[]> {
 
 async function getNewProducts(): Promise<CarouselProduct[]> {
   try {
-    const supabase = await createClient()
+    const supabase = createPublicClient()
     const { data } = await supabase
       .from('products')
       .select(`
@@ -70,7 +75,7 @@ async function getNewProducts(): Promise<CarouselProduct[]> {
 
 async function getFeaturedProducts(): Promise<FeaturedProduct[]> {
   try {
-    const supabase = await createClient()
+    const supabase = createPublicClient()
     const { data } = await supabase
       .from('products')
       .select(`
@@ -91,7 +96,7 @@ async function getFeaturedProducts(): Promise<FeaturedProduct[]> {
 
 async function getShadeWallItems(): Promise<ShadeWallItem[]> {
   try {
-    const supabase = await createClient()
+    const supabase = createPublicClient()
     const { data } = await supabase
       .from('product_shades')
       .select('id, name, hex_color')
