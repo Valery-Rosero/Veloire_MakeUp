@@ -18,7 +18,7 @@ export type CheckoutFormData = z.infer<typeof checkoutFormSchema>
 export const checkoutSchema = checkoutFormSchema.extend({
   city: z.string().min(2),
   department: z.string().min(2),
-  payment_method: z.enum(['nequi', 'bancolombia']),
+  payment_method: z.enum(['nequi']),
 })
 
 export type CheckoutInput = z.infer<typeof checkoutSchema>

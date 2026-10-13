@@ -10,7 +10,9 @@ type Db = SupabaseClient<Database>
 export const PAYMENT_WINDOW_HOURS = 24
 export const PAYMENT_WINDOW = `${PAYMENT_WINDOW_HOURS} hours`
 
-export type PaymentMethod = 'nequi' | 'bancolombia'
+// Solo Nequi: el efectivo y Bancolombia se retiraron el 2026-10-12. Los
+// pedidos viejos con otro valor siguen guardados tal cual en la base.
+export type PaymentMethod = 'nequi'
 
 export interface OrderLine {
   shadeId: string

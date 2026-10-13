@@ -23,11 +23,6 @@ export interface ProductOption {
   shades: Shade[]
 }
 
-const PAYMENT_OPTIONS: Array<{ value: PaymentMethod; label: string }> = [
-  { value: 'nequi', label: 'Nequi' },
-  { value: 'bancolombia', label: 'Bancolombia' },
-]
-
 const inputCls =
   'w-full border border-rim rounded-lg px-3 py-2 text-sm font-body bg-page text-fg focus:outline-none focus:border-rim-2 transition-colors placeholder:text-fg-2'
 
@@ -58,7 +53,8 @@ export function CreateOrderForm({
   const [city, setCity] = useState('Pasto')
   const [department, setDepartment] = useState('Nariño')
   const [notes, setNotes] = useState('')
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('nequi')
+  // Nequi es el único método de pago.
+  const paymentMethod: PaymentMethod = 'nequi'
 
   const [error, setError] = useState<string | null>(null)
 
@@ -253,25 +249,9 @@ export function CreateOrderForm({
                 className={`${inputCls} resize-none`}
               />
             </label>
-            <div>
-              <p className="font-body text-xs text-fg-3 mb-2">Método de pago</p>
-              <div className="flex gap-2 flex-wrap">
-                {PAYMENT_OPTIONS.map(({ value, label }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setPaymentMethod(value)}
-                    className={`px-4 py-2 rounded-lg text-sm font-body border transition-colors ${
-                      paymentMethod === value
-                        ? 'bg-noir text-beige border-noir'
-                        : 'bg-page border-rim text-fg-2 hover:border-rim-2'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <p className="font-body text-xs text-fg-3">
+              Método de pago: <span className="text-fg font-medium">Nequi</span>
+            </p>
           </div>
         </section>
       </div>

@@ -63,7 +63,7 @@ Estado: **En desarrollo activo**. El core de la tienda y el panel admin están o
 - Paso 1: Formulario de datos de envío (nombre, email, teléfono, dirección, barrio, notas)
   - Pre-llenado con datos del perfil del usuario
   - Validación en tiempo real con Zod
-- Paso 2: Instrucciones de pago por Nequi (el checkout web siempre crea el pedido como `nequi`; Bancolombia solo existe en pedidos manuales del admin)
+- Paso 2: Instrucciones de pago por Nequi (Nequi es el único método de pago, también en los pedidos manuales del admin)
   - Número de Nequi con botón CopyButton
   - Aviso de que los productos quedan apartados 24 h
   - Botón "Ya realicé el pago" que llama a `POST /api/orders`
@@ -98,7 +98,7 @@ Estado: **En desarrollo activo**. El core de la tienda y el panel admin están o
 - Fetcha `delivery_fee` de `store_config` (default 5 000 COP)
 - Cobertura: Pasto, Nariño — 1 a 2 días hábiles
 - Proceso en 4 pasos: pedido → pago → confirmación → entrega
-- Métodos de pago con colores de marca (Nequi, Bancolombia). El efectivo contra entrega se retiró el 2026-10-12
+- Método de pago: solo Nequi. El efectivo contra entrega y Bancolombia se retiraron el 2026-10-12
 - Política de devoluciones (ventana de 24 h, excepción por higiene)
 
 ### Privacidad y términos (`/privacidad`, `/terminos`)

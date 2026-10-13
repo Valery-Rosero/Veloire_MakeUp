@@ -36,7 +36,7 @@ export default function PrivacidadPage() {
         </ul>
         <p>
           No recolectamos datos de tarjetas ni de cuentas bancarias: los pagos se hacen por
-          transferencia directa a Nequi o Bancolombia.
+          transferencia directa a Nequi.
         </p>
       </LegalSection>
 

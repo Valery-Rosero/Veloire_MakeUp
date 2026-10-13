@@ -34,17 +34,11 @@ const PAYMENT_METHODS = [
     color: '#6C00D9',
     bg: '#f3eeff',
   },
-  {
-    name: 'Bancolombia',
-    desc: 'Transferencia bancaria. Te damos el número de cuenta al finalizar tu compra.',
-    color: '#FDB913',
-    bg: '#fffbeb',
-  },
 ]
 
 const STEPS = [
   { icon: Package,      label: 'Haces tu pedido',       desc: 'Elige tus productos y completa el formulario de envío.' },
-  { icon: CreditCard,   label: 'Realizas el pago',       desc: 'Transfieres por Nequi o Bancolombia.' },
+  { icon: CreditCard,   label: 'Realizas el pago',       desc: 'Transfieres por Nequi.' },
   { icon: CheckCircle,  label: 'Confirmamos',             desc: 'Verificamos tu pago y preparamos tu pedido.' },
   { icon: MapPin,       label: 'Te lo llevamos',          desc: 'Domicilio a tu dirección en Pasto en 1 a 2 días hábiles.' },
 ]
@@ -168,10 +162,10 @@ export default async function EnviosPage() {
 
           <div className="flex items-center gap-3 mb-10">
             <div className="w-px h-8 bg-accent shrink-0" />
-            <h2 className="font-display text-2xl text-fg">Métodos de pago</h2>
+            <h2 className="font-display text-2xl text-fg">Método de pago</h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
+          <div className="grid grid-cols-1 gap-4 max-w-sm">
             {PAYMENT_METHODS.map(({ name, desc, color, bg }) => (
               <div key={name} className="bg-card border border-rim rounded-2xl p-6">
                 <div

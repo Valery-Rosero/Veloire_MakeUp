@@ -165,7 +165,7 @@ El sistema usa **flexbox y grid con `gap`** para spacing entre elementos — no 
 - **Catálogo**: Grid de productos con filtros por categoría y ordenamiento. Loading skeleton con `animate-pulse`.
 - **Producto**: Galería de imágenes, selector de tonos con color swatch, descripción, productos relacionados.
 - **Carrito**: Drawer lateral con lista de items, subtotal, costo de envío y CTA a checkout.
-- **Checkout**: 2 pasos — (1) Datos de envío pre-llenados desde el perfil, (2) Instrucciones de pago (Nequi, Bancolombia).
+- **Checkout**: 2 pasos — (1) Datos de envío pre-llenados desde el perfil, (2) Instrucciones de pago (Nequi).
 - **Cuenta**: Perfil editable (nombre, teléfono), historial de pedidos con badges de estado.
 
 ### Admin

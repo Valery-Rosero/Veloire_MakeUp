@@ -283,7 +283,7 @@ export function ProductClient({ product }: ProductClientProps) {
         <div className="mt-auto space-y-1.5 pt-2">
           <p className="text-xs font-body text-fg-3 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
-            Envíos a Pasto · Pago por Nequi o Bancolombia
+            Envíos a Pasto · Pago por Nequi
           </p>
           <p className="text-xs font-body text-fg-3 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />

@@ -45,7 +45,7 @@ const FAQS = [
   },
   {
     q: '¿Cómo pago mi pedido?',
-    a: 'Aceptamos transferencias por Nequi y Bancolombia. Al finalizar tu pedido te damos las instrucciones de pago y confirmamos una vez lo recibamos.',
+    a: 'Aceptamos transferencias por Nequi. Al finalizar tu pedido te damos las instrucciones de pago y confirmamos una vez lo recibamos.',
   },
 ]
 
