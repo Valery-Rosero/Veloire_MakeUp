@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { isAdminRole } from '@/lib/roles'
 import type { NotificationType } from '@/types/database'
 
 const VALID_TYPES: NotificationType[] = [
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
     .eq('id', user.id)
     .single()
 
-  if (profile?.role !== 'admin') {
+  if (!isAdminRole(profile?.role)) {
     return NextResponse.json({ error: 'Prohibido.' }, { status: 403 })
   }
 

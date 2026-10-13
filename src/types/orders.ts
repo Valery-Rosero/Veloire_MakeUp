@@ -28,6 +28,7 @@ export interface Order {
   total: number
   payment_method?: string
   payment_confirmed_at: string | null
+  payment_expires_at?: string | null
   created_at: string
   order_items: OrderItem[]
 }

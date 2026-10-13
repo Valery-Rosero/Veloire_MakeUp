@@ -14,6 +14,17 @@ export function formatDate(iso: string) {
   }).format(new Date(iso))
 }
 
+// Hora de Colombia explícita: en el servidor (UTC) la hora saldría corrida.
+export function formatDateTime(iso: string) {
+  return new Intl.DateTimeFormat('es-CO', {
+    day: 'numeric',
+    month: 'long',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'America/Bogota',
+  }).format(new Date(iso))
+}
+
 export function formatRelativeDate(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
   const seconds = Math.floor(diff / 1000)

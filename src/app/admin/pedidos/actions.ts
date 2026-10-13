@@ -7,51 +7,13 @@ import { logAdminAction } from '@/lib/audit-log'
 import type { OrderStatus } from '@/types/database'
 import { sendOrderCancelledEmail } from '@/lib/email/send-order-cancelled'
 import { revalidateCatalog } from '@/lib/revalidate-storefront'
+import { cancelOrderAndRestock } from '@/lib/orders'
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-async function restoreOrderStock(orderId: string) {
-  const supabase = await createAdminClient()
-
-  const { data: items } = await supabase
-    .from('order_items')
-    .select('shade_id, quantity')
-    .eq('order_id', orderId)
-
-  if (!items?.length) return
-
-  const shadeIds = items.map((i) => i.shade_id).filter(Boolean) as string[]
-  if (!shadeIds.length) return
-
-  const { data: shades } = await supabase
-    .from('product_shades')
-    .select('id, stock')
-    .in('id', shadeIds)
-
-  const stockMap = new Map((shades ?? []).map((s) => [s.id, s.stock]))
-
-  await Promise.all(
-    items.map(async (item) => {
-      if (!item.shade_id) return
-      const current = stockMap.get(item.shade_id) ?? 0
-      await supabase
-        .from('product_shades')
-        .update({ stock: current + item.quantity })
-        .eq('id', item.shade_id)
-    })
-  )
-
-  revalidateCatalog()
-}
-
-// ── Actions ───────────────────────────────────────────────────────────────────
-
-export async function updateOrderStatus(orderId: string, status: OrderStatus) {
+export async function updateOrderStatus(
+  orderId: string,
+  status: OrderStatus
+): Promise<{ error?: string }> {
   const admin = await requireAdmin()
-  if (status === 'cancelled') {
-    await restoreOrderStock(orderId)
-  }
-
   const supabase = await createAdminClient()
   const { data: orderRow } = await supabase
     .from('orders')
@@ -59,7 +21,15 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
     .eq('id', orderId)
     .single()
 
-  await supabase.from('orders').update({ status }).eq('id', orderId)
+  // Cancelar siempre pasa por cancel_order, que devuelve el stock una sola vez.
+  if (status === 'cancelled') {
+    const { cancelled, error } = await cancelOrderAndRestock(supabase, orderId)
+    if (error) return { error }
+    if (cancelled) revalidateCatalog()
+  } else {
+    const { error } = await supabase.from('orders').update({ status }).eq('id', orderId)
+    if (error) return { error: error.message }
+  }
 
   await logAdminAction({
     actorId: admin.id,
@@ -73,12 +43,11 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
 
   revalidatePath('/admin/pedidos')
   revalidatePath(`/admin/pedidos/${orderId}`)
+  return {}
 }
 
 export async function cancelOrder(orderId: string): Promise<{ success: true } | { error: string }> {
   const admin = await requireAdmin()
-  await restoreOrderStock(orderId)
-
   const supabase = await createAdminClient()
 
   const { data: order } = await supabase
@@ -87,14 +56,11 @@ export async function cancelOrder(orderId: string): Promise<{ success: true } | 
     .eq('id', orderId)
     .single()
 
-  const { error } = await supabase
-    .from('orders')
-    .update({ status: 'cancelled' })
-    .eq('id', orderId)
-    .neq('status', 'delivered')
-    .neq('status', 'cancelled')
+  const { cancelled, error } = await cancelOrderAndRestock(supabase, orderId)
+  if (error) return { error }
+  if (!cancelled) return { error: 'El pedido ya estaba cancelado o entregado.' }
 
-  if (error) return { error: error.message }
+  revalidateCatalog()
 
   if (order) {
     await sendOrderCancelledEmail({

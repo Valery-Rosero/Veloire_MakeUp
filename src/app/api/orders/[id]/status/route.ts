@@ -1,5 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { isAdminRole } from '@/lib/roles'
+import { cancelOrderAndRestock } from '@/lib/orders'
+import { revalidateCatalog } from '@/lib/revalidate-storefront'
 import type { OrderStatus } from '@/types/database'
 
 const VALID_STATUSES: OrderStatus[] = [
@@ -35,8 +38,18 @@ export async function PATCH(
     .eq('id', user.id)
     .single()
 
-  if (profile?.role !== 'admin') {
+  if (!isAdminRole(profile?.role)) {
     return NextResponse.json({ error: 'Prohibido.' }, { status: 403 })
+  }
+
+  if (status === 'cancelled') {
+    const { cancelled, error } = await cancelOrderAndRestock(supabase, id)
+    if (error) return NextResponse.json({ error }, { status: 500 })
+    if (!cancelled) {
+      return NextResponse.json({ error: 'El pedido ya estaba cancelado o entregado.' }, { status: 409 })
+    }
+    revalidateCatalog()
+    return NextResponse.json({ success: true })
   }
 
   const updateData: { status: OrderStatus; payment_confirmed_at?: string; payment_confirmed_by?: string } = { status }

@@ -7,6 +7,7 @@ import { ChevronDown, ChevronUp, Loader2, ArrowLeft } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCartStore } from '@/lib/store/cart'
 import { CopyButton } from '@/components/ui/CopyButton'
+import { PAYMENT_WINDOW_HOURS } from '@/lib/orders'
 
 interface PagoClientProps {
   nequiNumber: string
@@ -145,6 +146,10 @@ export function PagoClient({ nequiNumber, nequiName, deliveryFee }: PagoClientPr
         <p className="font-body text-xs text-fg-2 leading-relaxed">
           Transfiere el monto exacto y guarda el comprobante. Tu pedido se activará
           una vez confirmemos el pago. Te avisaremos por correo.
+        </p>
+        <p className="font-body text-xs text-fg-2 leading-relaxed mt-2">
+          Apartamos tus productos por <span className="font-medium text-fg">{PAYMENT_WINDOW_HOURS} horas</span>.
+          Si no recibimos el pago en ese tiempo, el pedido se cancela automáticamente.
         </p>
       </div>
 

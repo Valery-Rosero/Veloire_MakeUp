@@ -22,7 +22,7 @@ export interface Database {
         Relationships: []
       }
       products: {
-        Row: { id: string; category_id: string; name: string; slug: string; sku: string; description: string | null; comparison: Json; price: number; compare_price: number | null; cost_price: number | null; brand: string | null; no_color_variation: boolean; status: ProductStatus; is_featured: boolean; meta_title: string | null; meta_description: string | null; created_at: string; updated_at: string }
+        Row: { id: string; category_id: string; name: string; slug: string; sku: string; description: string | null; comparison: Json; price: number; compare_price: number | null; cost_price: number | null; brand: string | null; no_color_variation: boolean; status: ProductStatus; auto_deactivated: boolean; is_featured: boolean; meta_title: string | null; meta_description: string | null; created_at: string; updated_at: string }
         Insert: { category_id: string; name: string; slug: string; sku: string; price: number; description?: string | null; comparison?: Json; compare_price?: number | null; cost_price?: number | null; brand?: string | null; no_color_variation?: boolean; status?: ProductStatus; is_featured?: boolean; meta_title?: string | null; meta_description?: string | null }
         Update: { category_id?: string; name?: string; slug?: string; sku?: string; price?: number; description?: string | null; comparison?: Json; compare_price?: number | null; cost_price?: number | null; brand?: string | null; no_color_variation?: boolean; status?: ProductStatus; is_featured?: boolean; meta_title?: string | null; meta_description?: string | null }
         Relationships: []
@@ -40,7 +40,7 @@ export interface Database {
         Relationships: []
       }
       orders: {
-        Row: { id: string; user_id: string | null; order_number: string; status: OrderStatus; customer_name: string; customer_email: string; customer_phone: string; address: string; neighborhood: string; city: string; department: string; notes: string | null; subtotal: number; delivery_fee: number; total: number; payment_method: string; payment_confirmed_at: string | null; payment_confirmed_by: string | null; created_at: string; updated_at: string }
+        Row: { id: string; user_id: string | null; order_number: string; status: OrderStatus; customer_name: string; customer_email: string; customer_phone: string; address: string; neighborhood: string; city: string; department: string; notes: string | null; subtotal: number; delivery_fee: number; total: number; payment_method: string; payment_confirmed_at: string | null; payment_confirmed_by: string | null; payment_expires_at: string | null; created_at: string; updated_at: string }
         Insert: { user_id?: string | null; order_number: string; status?: OrderStatus; customer_name: string; customer_email: string; customer_phone: string; address: string; neighborhood: string; city: string; department: string; payment_method: string; subtotal: number; delivery_fee: number; total: number; notes?: string | null; payment_confirmed_at?: string | null; payment_confirmed_by?: string | null }
         Update: { status?: OrderStatus; payment_confirmed_at?: string | null; payment_confirmed_by?: string | null }
         Relationships: []
@@ -101,6 +101,24 @@ export interface Database {
     Functions: {
       generate_order_number: { Args: Record<string, never>; Returns: string }
       is_admin: { Args: Record<string, never>; Returns: boolean }
+      create_order: {
+        Args: {
+          p_customer_name: string
+          p_customer_email: string
+          p_customer_phone: string
+          p_address: string
+          p_neighborhood: string
+          p_city: string
+          p_department: string
+          p_notes: string
+          p_payment_method: string
+          p_items: Json
+          p_expires_in?: string | null
+        }
+        Returns: Json
+      }
+      cancel_order: { Args: { p_order_id: string; p_only_if_status?: string | null }; Returns: boolean }
+      cancel_expired_orders: { Args: Record<string, never>; Returns: number }
     }
   }
 }

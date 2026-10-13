@@ -8,6 +8,7 @@ import type { Order, OrderItem } from '@/types/orders'
 import { CopyButton } from '@/components/ui/CopyButton'
 import { OrderCheckAnimation } from '@/components/store/OrderCheckAnimation'
 import { CancelOrderButton } from '@/components/store/CancelOrderButton'
+import { formatDateTime } from '@/lib/format'
 
 interface PageProps {
   params: Promise<{ orderNumber: string }>
@@ -42,7 +43,7 @@ async function getOrder(orderNumber: string): Promise<Order | null> {
       .select(`
         id, order_number, status, customer_name, customer_email,
         address, neighborhood, city, subtotal, delivery_fee, total,
-        payment_confirmed_at, created_at,
+        payment_confirmed_at, payment_expires_at, created_at,
         order_items(id, product_name, shade_name, shade_hex, image_url, quantity, unit_price, subtotal)
       `)
       .eq('order_number', orderNumber)
@@ -158,6 +159,13 @@ export default async function PedidoPage({ params }: PageProps) {
           Te avisaremos a{' '}
           <span className="font-medium text-fg">{order.customer_email}</span> cuando
           confirmemos tu pago.
+          {order.payment_expires_at && (
+            <>
+              {' '}Tus productos están apartados hasta el{' '}
+              <span className="font-medium text-fg">{formatDateTime(order.payment_expires_at)}</span>;
+              si no recibimos el pago, el pedido se cancela automáticamente.
+            </>
+          )}
         </p>
       )}
 

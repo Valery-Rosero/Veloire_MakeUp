@@ -1,8 +1,10 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { sendOrderCancelledEmail } from '@/lib/email/send-order-cancelled'
+import { cancelOrderAndRestock } from '@/lib/orders'
+import { revalidateCatalog } from '@/lib/revalidate-storefront'
 
 export async function cancelOrder(orderId: string): Promise<{ success: true } | { error: string }> {
   const supabase = await createClient()
@@ -19,12 +21,15 @@ export async function cancelOrder(orderId: string): Promise<{ success: true } | 
   if (order.customer_email !== user.email) return { error: 'No autorizado' }
   if (order.status !== 'pending_payment') return { error: 'Solo se pueden cancelar pedidos pendientes de pago' }
 
-  const { error } = await supabase
-    .from('orders')
-    .update({ status: 'cancelled' })
-    .eq('id', orderId)
-
-  if (error) return { error: error.message }
+  // 'pending_payment' se vuelve a exigir dentro de la transacción: si la admin
+  // confirmó el pago justo después de la verificación de arriba, no se cancela.
+  const { cancelled, error } = await cancelOrderAndRestock(
+    await createAdminClient(),
+    orderId,
+    'pending_payment'
+  )
+  if (error) return { error }
+  if (!cancelled) return { error: 'Este pedido ya no se puede cancelar' }
 
   await sendOrderCancelledEmail({
     orderNumber: order.order_number,
@@ -33,5 +38,6 @@ export async function cancelOrder(orderId: string): Promise<{ success: true } | 
   })
 
   revalidatePath(`/pedido/${order.order_number}`)
+  revalidateCatalog()
   return { success: true }
 }

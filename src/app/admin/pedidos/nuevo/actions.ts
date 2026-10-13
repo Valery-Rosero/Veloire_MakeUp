@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { requireAdmin } from '@/lib/auth-guard'
 import { logAdminAction } from '@/lib/audit-log'
+import { createOrder, type PaymentMethod } from '@/lib/orders'
+import { revalidateCatalog } from '@/lib/revalidate-storefront'
 
 export interface AdminOrderItem {
   productId: string
@@ -25,7 +27,7 @@ export interface CreateAdminOrderInput {
   city: string
   department: string
   notes: string
-  payment_method: 'nequi' | 'bancolombia' | 'efectivo'
+  payment_method: PaymentMethod
   items: AdminOrderItem[]
 }
 
@@ -38,75 +40,35 @@ export async function createAdminOrder(
 
     const supabase = await createAdminClient()
 
-    const { data: feeRows } = await supabase
-      .from('store_config')
-      .select('value')
-      .eq('key', 'delivery_fee')
-      .limit(1)
-    const delivery_fee = parseInt(
-      (feeRows as Array<{ value: string }> | null)?.[0]?.value ?? '5000',
-      10
-    )
+    // Los pedidos manuales también apartan stock al crearse, pero no vencen:
+    // la admin acordó el pago directamente con la clienta.
+    const result = await createOrder(supabase, {
+      ...input,
+      items: input.items.map((i) => ({ shadeId: i.shadeId, quantity: i.quantity })),
+      expiresIn: null,
+    })
 
-    const subtotal = input.items.reduce((s, i) => s + i.unitPrice * i.quantity, 0)
-    const total = subtotal + delivery_fee
-
-    const { data: orderNumber, error: rpcError } = await supabase.rpc('generate_order_number')
-    if (rpcError) return { error: 'Error generando número de pedido' }
-
-    const { data: orderRows, error: orderError } = await supabase
-      .from('orders')
-      .insert({
-        order_number: orderNumber,
-        customer_name: input.customer_name,
-        customer_email: input.customer_email,
-        customer_phone: input.customer_phone,
-        address: input.address,
-        neighborhood: input.neighborhood,
-        city: input.city,
-        department: input.department,
-        notes: input.notes || null,
-        payment_method: input.payment_method,
-        subtotal,
-        delivery_fee,
-        total,
-        status: 'pending_payment',
-      })
-      .select('id')
-
-    if (orderError) return { error: orderError.message }
-
-    const orderId = (orderRows as Array<{ id: string }> | null)?.[0]?.id
-    if (!orderId) return { error: 'No se pudo obtener el ID del pedido' }
-
-    const { error: itemsError } = await supabase.from('order_items').insert(
-      input.items.map((item) => ({
-        order_id: orderId,
-        product_id: item.productId,
-        shade_id: item.shadeId,
-        product_name: item.productName,
-        shade_name: item.shadeName,
-        shade_hex: item.shadeHex,
-        image_url: item.imageUrl,
-        quantity: item.quantity,
-        unit_price: item.unitPrice,
-        subtotal: item.unitPrice * item.quantity,
-      }))
-    )
-
-    if (itemsError) return { error: itemsError.message }
+    if (!result.ok) {
+      if (result.reason === 'stock_insuficiente') {
+        return {
+          error: `No hay stock suficiente de "${result.productName} — ${result.shadeName}" (quedan ${result.available}).`,
+        }
+      }
+      return { error: result.message }
+    }
 
     await logAdminAction({
       actorId: admin.id,
       actorEmail: admin.email,
       action: 'order.create',
       entityType: 'order',
-      entityId: orderId,
-      entityLabel: orderNumber,
+      entityId: result.orderId,
+      entityLabel: result.orderNumber,
     })
 
     revalidatePath('/admin/pedidos')
-    return { orderId }
+    revalidateCatalog()
+    return { orderId: result.orderId }
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Error inesperado' }
   }

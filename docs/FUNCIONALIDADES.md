@@ -66,8 +66,10 @@ Estado: **En desarrollo activo**. El core de la tienda y el panel admin están o
 - Paso 2: Instrucciones de pago
   - Métodos: Nequi, Bancolombia, Efectivo
   - Número de Nequi/cuenta con botón CopyButton
+  - Aviso de que los productos quedan apartados 24 h
   - Botón "Ya realicé el pago" que llama a `POST /api/orders`
-- Al crear el pedido: descuenta stock en `product_shades`, envía email de confirmación, limpia el carrito
+- Al crear el pedido (`create_order` en Supabase, vía `src/lib/orders.ts`): aparta el stock en la misma transacción que crea el pedido — si dos clientas compran la última unidad a la vez, solo una lo logra y la otra recibe "ya no está disponible". Del carrito solo se usan tono y cantidad: precio, nombre e imagen salen de la base de datos (no se pueden manipular desde el navegador). Luego limpia el carrito
+- Si no se confirma el pago en 24 h, el pedido se cancela solo y el stock vuelve (`pg_cron` cada 10 min)
 
 ### Confirmación de pedido (`/pedido` y `/pedido/[orderNumber]`)
 
@@ -75,7 +77,8 @@ Estado: **En desarrollo activo**. El core de la tienda y el panel admin están o
 - Número de pedido, resumen de items, total
 - Instrucciones del próximo paso
 - Link a historial de pedidos en `/cuenta`
-- El cliente puede cancelar si el estado es `pending_payment` — al cancelar se envía email `OrderCancelled` automáticamente
+- Muestra hasta qué fecha y hora están apartados los productos (si el pedido vence)
+- El cliente puede cancelar si el estado es `pending_payment` — devuelve el stock y envía email `OrderCancelled` automáticamente
 
 ### Sobre nosotras (`/nosotras`)
 

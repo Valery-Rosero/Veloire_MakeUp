@@ -6,6 +6,21 @@ Lo que falta construir, mejorar o terminar. Organizado por prioridad.
 
 ## Alta prioridad — Bloqueantes para producción
 
+### ~~Ventas: compras simultáneas y stock~~ ✅ Completado (2026-10-12)
+
+Revisión del flujo de compra encontró y corrigió, probado contra la base real:
+- **Descuento doble**: el checkout descontaba stock y el trigger `discount_stock_on_payment` lo volvía a descontar al confirmar el pago (comprar 2 restaba 4). Trigger eliminado.
+- **Compras simultáneas**: leer-validar-escribir sin bloqueo permitía vender la última unidad dos veces. Ahora `create_order()` hace todo en una transacción con `UPDATE ... WHERE stock >= cantidad`. Prueba: 5 compras simultáneas de 1 unidad → 1 pedido, 4 rechazadas.
+- **Precios manipulables**: el precio venía del carrito del navegador. Ahora sale de la base de datos (probado enviando $1 → se guardó el precio real).
+- **Cancelaciones**: la clienta cancelaba sin devolver stock, y cancelar un pedido manual del admin sumaba stock que nunca se había descontado. Ahora todo pasa por `cancel_order()`, que devuelve el stock exactamente una vez. El pedido manual del admin también aparta stock al crearse (cierra el pendiente que estaba anotado sobre `createAdminOrder`).
+- **Pedidos sin pagar**: se cancelan solos a las 24 h (`pg_cron`), los pedidos manuales del admin no vencen. La clienta ve la fecha límite en el pago y en `/pedido/[número]`.
+- **Productos desactivados por falta de stock** vuelven solos a la tienda cuando el stock regresa (columna `auto_deactivated`), salvo que la admin los haya desactivado a mano.
+- **Vale (superadmin) no podía confirmar pagos**: `/api/orders/[id]/status` y `/api/notifications` solo aceptaban el rol `admin`.
+
+SQL en `supabase/migrations/20261012_checkout_atomico.sql` (primer archivo de migración versionado en el repo — antes las funciones de la base solo vivían en Supabase). Detalle en [BASE-DE-DATOS.md](BASE-DE-DATOS.md#checkout-y-stock-solo-service_role).
+
+Pendiente menor: la cancelación automática no envía correo a la clienta (solo ve el estado en `/pedido`); las cancelaciones manuales sí lo envían.
+
 ### ~~Páginas en el footer que no existen~~ ✅ Completado
 
 `/nosotras`, `/contacto` y `/envios` están implementadas.
@@ -112,7 +127,7 @@ Piezas nuevas:
 - `src/lib/revalidate-storefront.ts` — `revalidateCatalog()` y `revalidateCategories()`, llamadas desde **todos** los puntos que escriben `products`/`categories`/`product_shades`/`product_images`: `saveProduct`, `deleteProduct`, `toggleProductStatus`, `upsertProductsFromImport` (Excel), `saveCategory`, `createCategoryQuick`, el descuento de stock en `POST /api/orders` (checkout), y la restauración de stock al cancelar un pedido (`restoreOrderStock`). Así el catálogo y la ficha de producto se actualizan al instante tras cualquier cambio real, sin esperar los 60s de TTL — el TTL es solo la red de seguridad por si algún punto de escritura queda sin cubrir.
 - Next 16 cambió la firma de `revalidateTag`: el single-arg `revalidateTag(tag)` está deprecado, ahora pide `revalidateTag(tag, 'max')` (stale-while-revalidate, lo recomendado) — se detectó por error de TypeScript al implementar, no por memoria de versiones viejas.
 
-**Pendiente real detectado de paso, sin tocar (fuera de alcance de esta tarea):** `src/app/admin/pedidos/nuevo/actions.ts::createAdminOrder()` (crear pedido manual desde el admin) no descuenta stock de `product_shades` — a diferencia del checkout normal y de `restoreOrderStock`. Puede ser intencional (pedidos manuales ya reconciliados a mano) o un descuido; no se tocó porque no era parte de lo pedido, pero vale la pena decidir qué hacer con eso.
+~~Pendiente detectado de paso: `createAdminOrder()` no descontaba stock~~ — resuelto en la revisión de ventas (2026-10-12): ahora usa `create_order()` como el checkout.
 
 ### ~~Multi-imagen por tono~~ ✅ Ya funcionaba (doc desactualizado)
 

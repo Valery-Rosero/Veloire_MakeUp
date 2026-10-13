@@ -114,6 +114,7 @@ Producto principal (sin variantes de tono).
 | `brand` | text | Marca — usada para generar el SKU |
 | `cost_price` | numeric | Costo unitario (calculador de rentabilidad en el importador) |
 | `status` | text | `'active'`, `'inactive'`, `'draft'` |
+| `auto_deactivated` | bool | `true` si lo desactivó el sistema por quedarse sin stock (no la admin). Solo esos productos se reactivan solos cuando vuelve el stock (ej. al cancelarse un pedido). Cualquier cambio manual de `status` lo pone en `false`. |
 | `is_featured` | bool | Aparece en destacados del home |
 | `meta_title` | text | Título SEO |
 | `meta_description` | text | Descripción SEO |
@@ -147,7 +148,7 @@ Variantes de tono de un producto. Cada tono tiene su propio stock.
 | `name` | text | Nombre del tono |
 | `hex_color` | text | Color hexadecimal (`#RRGGBB`) |
 | `image_url` | text | Imagen específica del tono |
-| `stock` | int | Unidades disponibles |
+| `stock` | int | Unidades disponibles (ya descontadas las apartadas por pedidos pendientes). `check (stock >= 0)` |
 | `is_active` | bool | Disponible para compra |
 | `sort_order` | int | Orden de aparición |
 
@@ -175,7 +176,10 @@ Pedidos de la tienda.
 | `delivery_fee` | numeric | Costo de domicilio |
 | `total` | numeric | `subtotal + delivery_fee` |
 | `payment_confirmed_at` | timestamp | Cuándo se confirmó el pago |
+| `payment_expires_at` | timestamptz | Hasta cuándo se aparta el stock sin pago. Pedidos de la tienda: 24 h. `null` en pedidos manuales del admin, que nunca vencen |
 | `created_at` | timestamp | — |
+
+Los pedidos **no se crean con `insert` directo**: siempre vía `create_order()` (ver Funciones), que aparta stock y crea el pedido en una sola transacción.
 
 #### `OrderStatus` (enum)
 
@@ -210,9 +214,9 @@ Líneas de un pedido.
 
 ---
 
-### `order_history`
+### `order_status_history`
 
-Log de cambios de estado de un pedido.
+Log de cambios de estado de un pedido (lo llena el trigger `log_order_status_change()`).
 
 | Columna | Tipo | Notas |
 |---|---|---|
@@ -304,10 +308,23 @@ Estas funciones tienen `search_path = pg_catalog, public` para evitar ataques de
 | Función | Descripción |
 |---|---|
 | `set_updated_at()` | Trigger para actualizar `updated_at` automáticamente |
-| `log_order_status_change()` | Trigger que inserta en `order_history` al cambiar estado del pedido |
+| `log_order_status_change()` | Trigger que inserta en `order_status_history` al cambiar estado del pedido |
 | `generate_order_number()` | Genera números de pedido con formato `VEL-YYYYMMDD-NNNNN` |
-| `discount_stock_on_payment()` | Trigger que descuenta stock cuando el pago es confirmado |
-| `fn_auto_deactivate_product()` | Desactiva un producto automáticamente si todo su stock llega a 0 |
+| `fn_auto_deactivate_product()` | Trigger en `product_shades.stock`: desactiva el producto si todos sus tonos quedan en 0 (marcándolo `auto_deactivated`), y lo reactiva si vuelve el stock y lo había desactivado el sistema |
+| `fn_clear_auto_deactivated()` | Trigger en `products`: un cambio manual de `status` limpia `auto_deactivated` |
+| `fn_block_uncancel()` | Trigger en `orders`: un pedido cancelado no puede volver a otro estado (su stock ya se devolvió) |
+
+### Checkout y stock (solo `service_role`)
+
+Definidas en `supabase/migrations/20261012_checkout_atomico.sql`. Son `SECURITY DEFINER` y tienen `EXECUTE` revocado para `anon`/`authenticated` — solo el servidor las llama, vía `src/lib/orders.ts`.
+
+| Función | Descripción |
+|---|---|
+| `create_order(...)` | Crea el pedido en una sola transacción: por cada tono descuenta el stock solo si alcanza (`stock >= cantidad`, el `UPDATE` bloquea la fila, así dos compras simultáneas de la última unidad nunca se venden dos veces), toma precios/nombres/imágenes de la base (nunca del navegador), calcula totales y crea `orders` + `order_items`. Si un tono no alcanza, lanza `stock_insuficiente` y no queda nada a medias |
+| `cancel_order(id, solo_si_estado)` | Cancela y devuelve el stock exactamente una vez, aunque lleguen varias cancelaciones a la vez. `solo_si_estado = 'pending_payment'` lo usa la clienta para no cancelar un pedido que la admin acaba de marcar como pagado |
+| `cancel_expired_orders()` | Cancela los pedidos `pending_payment` con `payment_expires_at` vencido. La corre `pg_cron` cada 10 min (job `cancelar-pedidos-vencidos`) y también `create_order` antes de apartar stock |
+
+> El stock se aparta **al crear el pedido**; confirmar el pago ya no lo toca (el antiguo trigger `discount_stock_on_payment` lo descontaba por segunda vez y fue eliminado).
 
 ---
 
